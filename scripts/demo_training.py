@@ -10,8 +10,8 @@ if __name__ == "__main__":
 
     # Model details.
     # EXP_POST_FIX = "DeepRPRobustGCN-rp-layers-1-4-7-final"
-    # EXP_POST_FIX = "DeepRPRobustGCN-rp-layer-at-last-schduling"
-    EXP_POST_FIX = "DeepRPRobustGCN-rp-layer-at-last-cosine-schduling"
+    # EXP_POST_FIX = "DeepRPRobustGCN-rp-layer-at-last-scheduling"
+    EXP_POST_FIX = "DeepRPRobustGCN-rp-layer-at-last-cosine-scheduling"
     # EXP_POST_FIX = "DeepRPGCN-baseline-w/o-skip-connection-dropout-attn-32-layers"
     # EXP_POST_FIX = "DeepRPGCN-baseline-w/o-skip-connection-dropout-attn-32-layers-rp-layer-after-3-gcn-layers"
     # EXP_POST_FIX = "DeepRPGCN-baseline-w/o-skip-connection-dropout-attn-32-layers-rp-layer-before-last-layer"
