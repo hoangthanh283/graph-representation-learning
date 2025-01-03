@@ -131,3 +131,5 @@ dmypy.json
 !assets/meta_data
 .vscode
 logs/
+!assets/master_charset.json
+!assets/meta_data

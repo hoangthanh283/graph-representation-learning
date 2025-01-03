@@ -1,6 +1,6 @@
 <div align="center">
 
-# Life Long Learning
+# Graph Representation Learning
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)]()
 [![Code style: pep8](https://img.shields.io/badge/code%20style-pep8-yellow)](https://www.python.org/dev/peps/pep-0008/k)
 
