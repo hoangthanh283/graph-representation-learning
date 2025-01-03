@@ -1,15 +1,5 @@
 #!venv/bin/python
 # -*- coding: utf-8 -*-
-
-"""
-Filename: graph_utils.py
-ultilities for graph
-"""
-
-
-__author__ = "Ethan and Marc"
-
-
 import numpy as np
 
 

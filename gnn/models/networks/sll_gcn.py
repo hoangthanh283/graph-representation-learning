@@ -2,15 +2,10 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from gnn.models.networks.drop_robust_gcn import RobustFilterGraphCNNDropEdge
+from gnn.models.networks.drop_robust_gcn import GraphCNNDropEdge
 
 
-class SSLGCN(RobustFilterGraphCNNDropEdge):
-    """The Core of Graph KV Module created by Ethan
-    Using the original name as tribute to him and Marc, Dini
-    who is the original writer of this source code
-    """
-
+class SSLGCN(GraphCNNDropEdge):
     def __init__(
         self,
         input_dim,

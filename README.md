@@ -33,18 +33,16 @@ pre-commit
 
 ## **Inference API**
 
-#### TODO
+Refer to scripts/demo_inference.py as an example to infer a trainee models under the scripts directory.
 
 ## **Training API**
 
 In this section, we will introduce a brief guideline to quickly fine-tune models in this repo, for detailed documentation of each model please refer below:
-
-- `model_name_1/README`
-
-  ### **Prerequisites**
+### **Prerequisites**
 
   Follow these preparation steps before training.
 
+  ```bash
   Step 1: Prepare training data
     ├── classes.json                                                                                           
     ├── corpus.json                                                                                            
@@ -58,10 +56,10 @@ In this section, we will introduce a brief guideline to quickly fine-tune models
         ├── sample_2.json                                                                          
         ├── sample_3.json  
         └── ... 
-
+  ```
   Step 2: Clone config file in configs/base_config.yaml and edit it based on your task.
 
-  Step 3: Refer to scripts/demo.py as an example to train models.
+  Step 3: Refer to scripts/demo_traning.py as an example to train models under the scripts directory.
 
   ### **Training configuration**
 
@@ -75,7 +73,7 @@ In this section, we will introduce a brief guideline to quickly fine-tune models
   import argparse
 
   from gnn.cl_warper import GNNLearningWarper
-  from gnn.models import RobustFilterGraphCNNDropEdge
+  from gnn.models import GraphCNNDropEdge
 
   if __name__ == "__main__":
       parser = argparse.ArgumentParser(description="CL configurations")
@@ -83,7 +81,7 @@ In this section, we will introduce a brief guideline to quickly fine-tune models
       args = parser.parse_args()
 
       # Define model instances.
-      model = RobustFilterGraphCNNDropEdge(input_dim=4369, output_dim=53, num_edges=6, net_size=256)
+      model = GraphCNNDropEdge(input_dim=4369, output_dim=53, num_edges=6, net_size=256)
 
       # Define the optimzation warper.
       warper = GNNLearningWarper(model, config_path=args.config)

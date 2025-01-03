@@ -28,9 +28,9 @@ class RanPACLayer(nn.Module):
         return self.projection(x)
 
 
-class RobustFilterGraphCNNDropEdge(BaseNetwork):
+class GraphCNNDropEdge(BaseNetwork):
     def __init__(self, input_dim, output_dim, num_edges, net_size=256, use_attention=True):
-        super(RobustFilterGraphCNNDropEdge, self).__init__()
+        super(GraphCNNDropEdge, self).__init__()
         self.output_dim = output_dim
         self.net_size = net_size
         self.emb1 = make_linear_relu(input_dim, self.net_size)

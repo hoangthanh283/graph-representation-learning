@@ -1,8 +1,7 @@
 import argparse
 
 from gnn.cl_warper import GNNLearningWarper
-from gnn.models import (DeepRPGCN, DeepRPRobustGCN,
-                        RPRobustFilterGraphCNNDropEdge)
+from gnn.models import DeepRPGCN, DeepRPRobustGCN, RPGraphCNNDropEdge
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CL configurations")

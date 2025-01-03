@@ -26,10 +26,10 @@ class RanPACLayer(nn.Module):
         return self.projection(x)
 
 
-class RPRobustFilterGraphCNNDropEdge(BaseNetwork):
+class RPGraphCNNDropEdge(BaseNetwork):
     def __init__(self, input_dim, output_dim, num_edges, net_size=256, use_attention=True, rp_size=10000,
                  lambda_value=0.05):
-        super(RPRobustFilterGraphCNNDropEdge, self).__init__()
+        super(RPGraphCNNDropEdge, self).__init__()
         # Use inspect to get the current frame's arguments.
         frame = inspect.currentframe()
         args, _, _, values = inspect.getargvalues(frame)

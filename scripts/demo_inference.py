@@ -1,7 +1,7 @@
 import argparse
 
 from gnn.cl_warper import GNNLearningWarper
-from gnn.models import RobustFilterGraphCNNDropEdge
+from gnn.models import GraphCNNDropEdge
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="CL configurations")
@@ -29,6 +29,6 @@ if __name__ == "__main__":
                 ...
             ]
     """
-    model = RobustFilterGraphCNNDropEdge(input_dim=4369, output_dim=53, num_edges=6, net_size=256)
+    model = GraphCNNDropEdge(input_dim=4369, output_dim=53, num_edges=6, net_size=256)
     warper = GNNLearningWarper(config_path=args.config)
     outputs = warper.predict("PUT_YOUR_INPUT_HERE")

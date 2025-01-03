@@ -4,7 +4,7 @@ import munch
 from bayes_opt import BayesianOptimization
 
 from gnn.cl_warper import GNNLearningWarper
-from gnn.models import RPRobustFilterGraphCNNDropEdge
+from gnn.models import RPGraphCNNDropEdge
 
 
 def objective_function(lambda_value: float, rp_size: int, config: munch.munchify) -> float:
@@ -16,7 +16,7 @@ def objective_function(lambda_value: float, rp_size: int, config: munch.munchify
     :return: float, f1 score.
     """
     # Create model with current parameters
-    model = RPRobustFilterGraphCNNDropEdge(
+    model = RPGraphCNNDropEdge(
         input_dim=4369,
         output_dim=45,
         num_edges=6,
