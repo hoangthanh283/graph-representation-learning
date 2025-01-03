@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/product.schema.json",
+  "title": "Input of std lib-<package_name>",
+  "description": "Input formatted from ......",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [ "location", "text"],
+    "properties": {
+      "location": {
+        "description": "The unique identifier for a product",
+        "type": "array",
+        "items": {
+          "type": "array"
+        }
+      },
+      "text": {
+        "description": "Text content of the line.",
+        "type": "string"
+      },
+      "confidence_by_field": {
+        "description": "Soft_max score of OCR results.",
+        "type": "number"
+      }
+    }
+  }
+}

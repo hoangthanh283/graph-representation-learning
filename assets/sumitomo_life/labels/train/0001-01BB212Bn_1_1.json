@@ -1,0 +1,183 @@
+{
+    "file_name": "0001-01BB212Bn_1_1.png",
+    "attributes": {
+        "_via_img_metadata": {
+            "file_attributes": {},
+            "regions": [
+                {
+                    "id": "0f03c4dcde36409ab32f3b9fa106fa70",
+                    "shape_attributes": {
+                        "name": "polygon",
+                        "all_points_x": [
+                            841,
+                            1744,
+                            1746,
+                            843
+                        ],
+                        "all_points_y": [
+                            2700,
+                            2679,
+                            2763,
+                            2784
+                        ]
+                    },
+                    "region_attributes": {
+                        "formal_key": "",
+                        "key_type": "other",
+                        "label": "\u6cb3\u672c\u533b\u9662",
+                        "note": "",
+                        "text_category": "",
+                        "text_type": "",
+                        "tags": []
+                    }
+                },
+                {
+                    "id": "05c2ee19c5a2453abac5d42eb811f284",
+                    "shape_attributes": {
+                        "name": "rect",
+                        "x": 1017,
+                        "y": 2582,
+                        "width": 692,
+                        "height": 85
+                    },
+                    "region_attributes": {
+                        "formal_key": "",
+                        "key_type": "other",
+                        "label": "\u533b\u7642\u6cd5\u4eba\u798f\u7b02\u4f1a",
+                        "note": "",
+                        "text_category": "",
+                        "text_type": "",
+                        "tags": []
+                    }
+                },
+                {
+                    "id": "ac2aa344c0f34924941ae549475358d7",
+                    "shape_attributes": {
+                        "name": "polygon",
+                        "all_points_x": [
+                            599,
+                            1228,
+                            1230,
+                            601
+                        ],
+                        "all_points_y": [
+                            2416,
+                            2400,
+                            2469,
+                            2485
+                        ]
+                    },
+                    "region_attributes": {
+                        "formal_key": "",
+                        "key_type": "other",
+                        "label": "\u5065\u5eb7\u8a3a\u65ad\u5b9f\u65bd\u533b\u7642\u6a5f\u95a2",
+                        "note": "",
+                        "text_category": "",
+                        "text_type": "",
+                        "tags": []
+                    }
+                },
+                {
+                    "id": "4d287dacddcf490da8c2de2d92d71921",
+                    "shape_attributes": {
+                        "name": "rect",
+                        "x": 802,
+                        "y": 1268,
+                        "width": 810,
+                        "height": 145
+                    },
+                    "region_attributes": {
+                        "formal_key": "",
+                        "key_type": "other",
+                        "label": "\u5065\u5eb7\u8a3a\u65ad\u7d50\u679c\u8868",
+                        "note": "",
+                        "text_category": "",
+                        "text_type": "",
+                        "tags": []
+                    }
+                },
+                {
+                    "id": "3a16ed1200c640018c402c008353eae0",
+                    "shape_attributes": {
+                        "name": "rect",
+                        "x": 1959,
+                        "y": 308,
+                        "width": 232,
+                        "height": 64
+                    },
+                    "region_attributes": {
+                        "formal_key": "",
+                        "key_type": "other",
+                        "label": "\u6bcd\u91cc\u514b\u679d\u69d8",
+                        "note": "",
+                        "text_category": "",
+                        "text_type": "",
+                        "tags": []
+                    }
+                }
+            ]
+        },
+        "_via_attributes": {
+            "region": {
+                "label": {
+                    "type": "text",
+                    "description": "",
+                    "default_value": ""
+                },
+                "key_type": {
+                    "type": "dropdown",
+                    "description": "",
+                    "options": {
+                        "key": "",
+                        "value": "",
+                        "master_key": "",
+                        "other": ""
+                    },
+                    "default_options": {
+                        "other": "true"
+                    }
+                },
+                "text_category": {
+                    "type": "dropdown",
+                    "description": "",
+                    "options": {
+                        "name": "",
+                        "address": "",
+                        "email": "",
+                        "number": "",
+                        "alphabet": "",
+                        "japanese": "",
+                        "checkbox": "",
+                        "mix": ""
+                    },
+                    "default_options": {
+                        "mix": "true"
+                    }
+                },
+                "text_type": {
+                    "type": "dropdown",
+                    "description": "",
+                    "options": {
+                        "handwriting": "",
+                        "printed": "",
+                        "mixed": ""
+                    },
+                    "default_options": {
+                        "printed": "true"
+                    }
+                },
+                "formal_key": {
+                    "type": "text",
+                    "description": "",
+                    "default_value": ""
+                },
+                "note": {
+                    "type": "text",
+                    "description": "",
+                    "default_value": ""
+                }
+            },
+            "file": {}
+        }
+    }
+}

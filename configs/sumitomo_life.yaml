@@ -1,0 +1,110 @@
+version: 2.0
+neptune_prj: NEPTUNE_PROJECT
+neptune_api_token: NEPTUNE_API_TOKEN
+ems_secret_name: NEPTUNE_SECRET_NAME
+experiment_name: GNN-RP
+seed: 1111
+is_train: true
+output_dir: ./assets/outputs
+checkpoint_path: null
+data_config:
+  dataset:
+    type: DatapileDataset
+    args:
+      node_label_padding_value: -100
+      other_class_index: null
+  training:
+    data_path:
+    - ./assets/sumitomo_life/labels/train
+    class_path: ./assets/sumitomo_life/classes.json
+    charset_path: ./assets/meta_data/master_charset.json
+    key_types:
+    - key
+    - value
+    batch_size: 4
+    num_workers: 0
+    shuffle: true
+    drop_last: true
+    pin_memory: true
+    max_size: 1000
+    augmentations: []
+    data_collate:
+      NumpyPadding:
+        name_value_pairs:
+          textline_encoding: 0.0
+          adjacency_matrix: 0.0
+          node_label: -100.0
+        only_selected_items: true
+    data_process:
+      TextlineEncoding:
+        is_normalized_text: true
+      HeuristicGraphBuilder:
+        num_edges: 6
+        edge_type: normal_binary
+      NodeLabeling: {}
+  validation:
+    data_path:
+    - ./assets/sumitomo_life/labels/test
+    class_path: ./assets/sumitomo_life/classes.json
+    charset_path: ./assets/meta_data/master_charset.json
+    key_types:
+    - key
+    - value
+    batch_size: 1
+    num_workers: 0
+    shuffle: true
+    drop_last: true
+    pin_memory: true
+    augmentations: []
+    data_collate:
+      NumpyPadding:
+        name_value_pairs:
+          textline_encoding: 0.0
+          adjacency_matrix: 0.0
+          node_label: -100.0
+        only_selected_items: true
+    data_process:
+      TextlineEncoding:
+        is_normalized_text: true
+      HeuristicGraphBuilder:
+        num_edges: 6
+        edge_type: normal_binary
+      NodeLabeling: {}
+procedure:
+  type: KVProcedure
+  args: {}
+loss:
+  type: CrossEntropyLoss
+  args: {}
+lr_scheduler:
+  type: DecayLearningRate
+  args:
+    lr: 0.001
+    factor: 0.9995
+    num_epochs: 100
+optimizer:
+  type: BuitlinOptimizer
+  args:
+    type_optimizer: Adam
+    lr: 0.001
+num_epochs: 50
+max_grad_norm: 5.0
+benchmark: false
+deterministic: true
+local_rank: 0
+num_gpus: 1
+distributed: false
+val_interval: 500
+save_interval: 500
+debug: false
+is_visualize: true
+model_dir_name: models
+logging:
+  verbose: false
+  level: info
+  default: info
+  log_interval: 100
+  use_tensorboard: true
+  summary_dir_name: summary
+  visualize_dir_name: visualize
+  log_dir_name: logs

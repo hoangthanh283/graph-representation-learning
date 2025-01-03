@@ -1,0 +1,95 @@
+version: 2.1
+
+executors:
+  python36-docker:
+    docker:
+      - image: circleci/python:3.6.10
+    resource_class: medium
+
+
+workflows:
+ version: 2
+ Test:
+   jobs:
+     - Template-code-coverage
+     - Performance-test
+ Example_Workflow:
+   jobs:
+     - Hello-World
+     - I-Have-Code:
+         requires:
+           - Hello-World
+     - Run-With-Node:
+         requires:
+           - Hello-World
+     - Now-Complete:
+         requires:
+           - Run-With-Node
+
+
+jobs:
+  Template-code-coverage:
+    executor: python36-docker
+    steps:
+      - checkout
+      - run:
+          # This "true" will ignore all errors, since this template is meant to raise NotImplementedError.
+          name: "Code coverage of the Template itself."
+          command: |
+            pip install pytest
+            pip install coverage
+            coverage run -m pytest -Wignore . || true
+            coverage report
+            coverage xml
+            curl -s https://codecov.io/bash | bash -s -- -c -F aFlag -f coverage.xml ...
+  Performance-test:
+    executor: python36-docker
+    steps:
+      - checkout
+      - run:
+          name: "Run performance test"
+          command: |
+            sudo apt-get update
+            sudo apt-get install sqlite3 libsqlite3-dev
+            pip install pytest
+            pip install pytest-monitor
+            pytest -svv tests/test_perf.py
+            sqlite3 .pymon "select ITEM, TOTAL_TIME, MEM_USAGE from TEST_METRICS;" ".exit" > query_res
+            sudo chmod +x scripts/show_query.sh
+            ./scripts/show_query.sh ./query_res
+  Hello-World:
+    docker:
+      - image: alpine:3.7
+    steps:
+      - run:
+          name: Hello World
+          command: |
+            echo 'Hello World!'
+            echo 'This is the delivery pipeline'
+  I-Have-Code:
+    docker:
+      - image: alpine:3.7
+    steps:
+      - checkout
+      - run:
+          name: Code Has Arrived
+          command: |
+            ls -al
+            echo '^^^That should look familiar^^^'
+  Run-With-Node:
+    docker:
+      - image: circleci/node:10-browsers
+    steps:
+      - run:
+          name: Running In A Container With Node
+          command: |
+            node -v
+  Now-Complete:
+    docker:
+      - image: alpine:3.7
+    steps:
+      - run:
+          name: Approval Complete
+          command: |
+            echo 'Do work once the approval has completed'
+

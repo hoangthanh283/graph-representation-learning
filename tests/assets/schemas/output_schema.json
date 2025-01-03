@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/product.schema.json",
+  "title": "Output of std lib-<package_name>",
+  "description": "This example shows a list of kv outputted text_lines.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "location",
+      "text",
+      "key_type",
+      "type"
+    ],
+    "properties": {
+      "location": {
+        "description": "The unique identifier for a product",
+        "type": "array",
+        "items": {
+          "type": "array"
+        }
+      },
+      "text": {
+        "description": "Text content of the line.",
+        "type": "string"
+      },
+      "key_type": {
+        "description": "key, value or other.",
+        "type": "string"
+      },
+      "type": {
+        "description": "Class of kv.",
+        "type": "string"
+      }
+    }
+  }
+}

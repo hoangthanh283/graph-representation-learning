@@ -1,0 +1,84 @@
+# CL Configurations.
+version: 2.0
+neptune_prj: NEPTUNE_PROJECT
+neptune_api_token: NEPTUNE_API_TOKEN
+ems_secret_name: NEPTUNE_SECRET_NAME
+experiment_name: CL-BASE
+seed: 0
+is_train: true
+benchmark: false
+deterministic: true
+output_dir: YOUR_OUTPUT_DIR
+checkpoint_path: YOUR_CHECKPOINT_PATH
+
+data_config:
+  dataset:
+    type: DATASET_TYPE
+    args: {ITS PARAMS}
+
+  training:
+    data_path: [FOLDERS OF TRAINING JSON FILES]
+    class_path: YOUR_FIELD_NAMES_FILE.json
+    charset_path: YOUR_CHARSET_FILE.json
+    batch_size: null
+    num_workers: 0
+    shuffle: true
+    drop_last: true
+    pin_memory: true
+    max_size: 1000  # Max length of label.
+    augmentations: []
+    data_collate: []
+    data_process: []
+
+  validation:
+    data_path: [YOUR FOLDERS OF VALIDATION JSON FILES]
+    class_path: YOUR_FIELD_NAMES_FILE.json
+    charset_path: YOUR_CHARSET_FILE.json
+    batch_size: null
+    num_workers: 0
+    shuffle: true
+    drop_last: true
+    pin_memory: true
+    augmentations: []
+    data_collate: []
+    data_process: []
+
+procedure: 
+  type: KVProcedure
+  args: {}
+
+loss:
+  type: YOUR_LOSS_TYPE
+  args: {}
+
+lr_scheduler:
+  type: LEARNING_RATE_SCHEDULER_TYPE
+  args: {ITS PARAMS}
+
+optimizer: 
+  type: OPTIMIZER_TYPE
+  args: {ITS PARAMS}
+
+num_epochs: 100
+max_grad_norm: 1.0
+local_rank: 0  # Use distributed training.
+num_gpus: 1  # The number of accessible gpus.
+distributed: false  # Use distributed training.
+val_interval: 500  # Interval to run validation.
+save_interval: 500  # Interval to save model.
+model_dir_name: models  # Path to save and logging.
+debug: false  # Run with debug mode, which hacks dataset num_samples to toy number.
+is_visualize: true  # Visualize the training processes.
+
+logging:
+  use_tensorboard: true
+  verbose: false  # Show verbose info.
+  level: info
+  default: info
+  log_interval: 100
+  use_tensorboard: true  # Visualize maps in tensorboard.
+  
+  summary_dir_name: your summary folder name
+  visualize_dir_name: your visualize folder name
+  log_dir_name: your logs folder name
+

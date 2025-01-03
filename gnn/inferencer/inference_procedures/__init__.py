@@ -1,0 +1,2 @@
+from gnn.inferencer.inference_procedures.base_procedure import BaseProcedure
+from gnn.inferencer.inference_procedures.kv_inference import KVInference
