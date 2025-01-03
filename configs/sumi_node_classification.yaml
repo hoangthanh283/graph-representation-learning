@@ -17,7 +17,7 @@ data_config:
     data_path:
     - ./assets/sumi/labels/train
     class_path: ./assets/sumi/classes.json
-    charset_path: ./assets/sumi/master_charset.json
+    charset_path: ./assets/meta_data/master_charset.json
     key_types:
     - key
     - value
