@@ -42,6 +42,12 @@ class DatapileAdaptedPlanetoid(NamedTuple):
                          tablefmt='simple')
         return '\n'.join(' ' * indent + line for line in table.splitlines())
 
+    def get_input_dim(self) -> int:
+        return self.x.shape[-1]
+
+    def get_num_classes(self) -> int:
+        return len(torch.unique(self.y))
+
 
 def get_adj_matrix(edge_index: torch.Tensor, num_nodes: int) -> torch.FloatTensor:
     """
@@ -87,6 +93,14 @@ def get_planetoid_dataset(dataset_name: PlanetoidDatasetName, normalize_features
     test_mask = dataset[0].test_mask
     adj = get_adj_matrix(dataset[0].edge_index, dataset[0].num_nodes)
     adj = adj.unsqueeze(0).unsqueeze(2)
+
+    if torch.cuda.is_available():
+        x = x.cuda()
+        y = y.cuda()
+        adj = adj.cuda()
+        train_mask = train_mask.cuda()
+        val_mask = val_mask.cuda()
+        test_mask = test_mask.cuda()
 
     return DatapileAdaptedPlanetoid(x=x, y=y, adj_matrix=adj,
                                     train_mask=train_mask, val_mask=val_mask, test_mask=test_mask)
