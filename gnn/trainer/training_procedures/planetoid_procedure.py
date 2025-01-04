@@ -79,7 +79,7 @@ class PlanetoidProcedure(BaseProcedure):
                                                                   self.config.num_epochs * num_epoch,
                                                                   base_value=1e-4, max_value=1.0,
                                                                   warmup_steps=5 * num_epoch)
-            table_data = [[key, value] for key, value in tr_metric_scores.items()]
+            table_data = [["Epoch", epoch]] + [[key, value] for key, value in tr_metric_scores.items()]
             table = tabulate(table_data,
                              headers=[],
                              tablefmt='simple')
