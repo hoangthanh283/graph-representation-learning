@@ -100,3 +100,9 @@ pip install pre-commit
 pre-commit
 ```
 Check your code against [`PEP 8`](http://www.python.org/dev/peps/pep-0008/) conventions.
+
+## Experiments
+For training Cora:
+```shell
+python scripts/demo_training_cora.py --config configs/cora.yaml
+```
