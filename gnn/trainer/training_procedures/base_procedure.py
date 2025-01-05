@@ -1,18 +1,25 @@
+import math
 import os
 from typing import Any, Dict, List, Tuple
 
+import matplotlib.pyplot as plt
+import munch
 import neptune.new as neptune
+import numpy as np
 import torch
 import torch.nn as nn
+from sklearn.manifold import TSNE
 from tensorboardX import SummaryWriter
+from tqdm import tqdm
 
+from gnn.data_generator.base_dataloader import BaseDataLoader
 from gnn.trainer import losses, lr_schedulers, optimizers
 from gnn.utils.checkpoint_handler import CheckpointHandler
 from gnn.utils.logger.color_logger import color_logger
 
 
 class BaseProcedure:
-    def __init__(self, model: nn.Module, config: Dict[str, Any],
+    def __init__(self, model: nn.Module, config: munch.munchify,
                  ems_exp: neptune = None, **kwargs: Dict[str, Any]):
         """Base training scheme for optimizing process.
 
@@ -47,7 +54,7 @@ class BaseProcedure:
         self.logger.info("Successful initializing optimizing setups ...")
 
     @classmethod
-    def _from_config(cls, model: nn.Module, config: Dict[str, Any], ems_exp: neptune = None,
+    def _from_config(cls, model: nn.Module, config: munch.munchify, ems_exp: neptune = None,
                      **kwargs: Dict[str, Any]) -> "BaseProcedure":
         return cls(model, config, ems_exp, **kwargs)
 
@@ -183,6 +190,111 @@ class BaseProcedure:
         for group in self.optimizer.param_groups:
             group["lr"] = lr
         return lr
+
+    def schedule_lambda(self, init_value: int, epoch: int, num_epoches: int, factor: float = 0.9) -> float:
+        """
+        Exponential lambda scheduler.
+
+        Args:
+            init_value: Initial lambda value.
+            epoch: Current nth epoch.
+            num_epoches: Total number of epoches.
+            factor: Decay factor.
+
+        Return:
+            new_value: Updated lambda value.
+        """
+        rate = np.power(1.0 - epoch / float(num_epoches + 1), factor)
+        new_value = init_value * rate
+        self.tb_writer.add_scalar("RP/Lambda", new_value, epoch)
+        if self.ems_exp:
+            self.ems_exp["RP/Lambda"].append(new_value)
+        return new_value
+
+    def cosine_schedule_lambda(self, step: int, epoch: int, total_steps: int, base_value: float, max_value: float,
+                               warmup_steps: int = 0) -> float:
+        """Cyclical lambda scheduler with warmup and cosine annealing.
+
+        Args:
+            step: Current training step
+            total_steps: Total number of training steps
+            base_value: Minimum lambda value
+            max_value: Maximum lambda value
+            warmup_steps: Number of warmup steps with linear scaling
+        """
+        # Input validation
+        step = max(0, min(step, total_steps))
+        warmup_steps = min(warmup_steps, total_steps)
+
+        # Calculate lambda
+        if step < warmup_steps:
+            # Linear warmup
+            lambda_value = base_value + (max_value - base_value) * (step / warmup_steps)
+        else:
+            # Cosine annealing
+            progress = float(step - warmup_steps) / float(max(1, total_steps - warmup_steps))
+            lambda_value = base_value + 0.5 * (max_value - base_value) * (1 + math.cos(math.pi * progress))
+        self.tb_writer.add_scalar("RP/Lambda", lambda_value, epoch)
+        if self.ems_exp:
+            self.ems_exp["RP/Lambda"].append(lambda_value)
+        return lambda_value
+
+    def visualize_representation_space(self, dataloader: BaseDataLoader, representation_layer: str = None):
+        """
+        Visualize the representation space in 2D using t-SNE.
+
+        Args:
+            dataloader: Dataloader for the dataset.
+            representation_layer: The layer from which to extract representations.
+        """
+        self.model.eval()
+        self.model.to(self.device)
+        representations: List[torch.Tensor] = []
+        labels: List[torch.Tensor] = []
+        validation_bar = tqdm(dataloader, desc="Visualize representation space ...")
+
+        # Collect representations and labels.
+        with torch.no_grad():
+            for batch in validation_bar:
+                inputs = batch["inputs"].to(self.device)
+                targets = batch["labels"].to(self.device)
+
+                # Forward pass through the model to get representations.
+                if representation_layer:
+                    representation = self._get_layer_output(inputs, representation_layer)
+                else:
+                    representation = self.model(inputs)
+                
+                representations.append(representation.cpu())
+                labels.append(targets.cpu())
+
+        # Concatenate all the representations and labels.
+        representations = torch.cat(representations, dim=0).numpy()
+        labels = torch.cat(labels, dim=-1).numpy()
+
+        # Apply t-SNE to reduce dimensionality to 2D
+        tsne = TSNE(n_components=2, random_state=42)
+        reduced_representation = tsne.fit_transform(representations)
+
+        # Plot the 2D representation space
+        plt.figure(figsize=(10, 8))
+        scatter = plt.scatter(
+            reduced_representation[:, 0],
+            reduced_representation[:, 1],
+            c=labels,
+            cmap="jet",
+            alpha=0.6
+        )
+        plt.colorbar(scatter, label="Class Labels")
+        plt.title("2D Visualization of Representation Space using t-SNE")
+        plt.xlabel("Dimension 1")
+        plt.ylabel("Dimension 2")
+        plt.savefig(f"{self.config.experiment_name}-representation_space.jpg")
+
+    def _get_layer_output(self, inputs: torch.Tensor, layer_name: str) -> torch.Tensor:
+        """Get the output of a specific layer in the model."""
+        layer = dict([*self.model.named_modules()])[layer_name]
+        return layer(inputs)
 
     def _progress(self):
         """Visualizing the optimizing progress. """

@@ -14,7 +14,7 @@ from gnn.utils.logger.color_logger import color_logger
 
 
 class BaseDataLoader(DataLoader):
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: munch.munchify):
         """Data loader to loader batch samples for training process.
 
         Arguments:
@@ -38,7 +38,7 @@ class BaseDataLoader(DataLoader):
         munch_configs = munch.munchify(configs)
         return cls(munch_configs)
 
-    def _load_collate_processors(self, collate_config: Dict[str, Any]) -> List[BaseCollate]:
+    def _load_collate_processors(self, collate_config: munch.munchify) -> List[BaseCollate]:
         """Load all data collate processors.
 
         Args:
@@ -71,7 +71,7 @@ class BaseDataLoader(DataLoader):
         dataset = getattr(datasets, dataset_type)._from_config(args, **kwargs)
         return dataset
 
-    def _get_dataloader(self, dataset: BaseDataset, data_config: Dict[str, Any], custom_collate: Callable = None,
+    def _get_dataloader(self, dataset: BaseDataset, data_config: munch.munchify, custom_collate: Callable = None,
                         **kwargs: Dict[str, Any]) -> DataLoader:
         """Load dataset with a given configs.
 
@@ -85,8 +85,11 @@ class BaseDataLoader(DataLoader):
         """
         try:
             # Set up data collates.
-            data_collates = self._load_collate_processors(data_config.data_collate)
-            data_collates = torchvision.transforms.Compose(data_collates)
+            if data_config.data_collate:
+                data_collates = self._load_collate_processors(data_config.data_collate)
+                data_collates = torchvision.transforms.Compose(data_collates)
+            else:
+                data_collates = None
             is_distributed = self.config.distributed
             if is_distributed:
                 data_config.batch_size = data_config.batch_size // self.config.num_gpus

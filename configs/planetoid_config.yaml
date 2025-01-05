@@ -1,0 +1,62 @@
+version: 2.0
+neptune_prj: NEPTUNE_PROJECT
+neptune_api_token: NEPTUNE_API_TOKEN
+ems_secret_name: NEPTUNE_SECRET_NAME
+experiment_name: GNN-PLANETOID-DATASETS
+seed: 12345
+is_train: true
+output_dir: ./assets/outputs
+checkpoint_path: null
+data_config:
+  dataset_type: Planetoid
+  dataset_name: Cora
+  data_dir: ./assets
+  batch_size: 1
+  num_workers: 0
+  shuffle: true
+  drop_last: true
+  pin_memory: true
+  max_size: 1000
+  augmentations: null
+  data_process: null
+  data_collate: null
+  node_label_padding_value: -100
+  other_class_index: null
+procedure:
+  type: PlanetoidProcedure
+  args: {}
+loss:
+  type: CrossEntropyLoss
+  args: {}
+lr_scheduler:
+  type: DecayLearningRate
+  args:
+    lr: 0.001
+    factor: 0.9995
+    num_epochs: 100
+optimizer:
+  type: BuitlinOptimizer
+  args:
+    type_optimizer: Adam
+    lr: 1.e-3
+num_epochs: 50
+max_grad_norm: 5.0
+benchmark: false
+deterministic: true
+local_rank: 0
+num_gpus: 1
+distributed: false
+val_interval: 500
+save_interval: 500
+debug: false
+is_visualize: true
+model_dir_name: models
+logging:
+  verbose: false
+  level: info
+  default: info
+  log_interval: 100
+  use_tensorboard: true
+  summary_dir_name: summary
+  visualize_dir_name: visualize
+  log_dir_name: logs

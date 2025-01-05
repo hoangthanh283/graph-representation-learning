@@ -5,4 +5,5 @@ from gnn.models.networks.dgcnn import DGCNN
 from gnn.models.networks.drop_robust_gcn import GraphCNNDropEdge
 from gnn.models.networks.gatv2 import GATV2
 from gnn.models.networks.robust_gcn import RobustGCN
+from gnn.models.networks.rp_gcn import RPGCN
 from gnn.models.networks.rp_robust_gcn import RPGraphCNNDropEdge

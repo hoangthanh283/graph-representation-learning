@@ -1,5 +1,4 @@
-from typing import Any, Dict
-
+import munch
 import torch.nn as nn
 
 from gnn import models
@@ -13,7 +12,7 @@ class BaseNetwork(nn.Module):
         self.logger = color_logger(__name__, testing_mode=False)
 
     @classmethod
-    def _from_config(cls, config: Dict[str, Any]) -> "BaseNetwork":
+    def _from_config(cls, config: munch.munchify) -> "BaseNetwork":
         """Creates specified Model object from a given config dict.
 
         Args:

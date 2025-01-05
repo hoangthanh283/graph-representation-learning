@@ -2,6 +2,8 @@ import os
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 
+import munch
+
 from gnn.data_generator import augmentor, data_process
 from gnn.data_generator.datasets.base_dataset import BaseDataset
 from gnn.utils.json_handler import JsonHandler
@@ -9,7 +11,7 @@ from gnn.utils.logger.color_logger import color_logger
 
 
 class CassiaDataset(BaseDataset):
-    def __init__(self, data_config: Dict[str, Any], **kwargs: Dict[str, Any]):
+    def __init__(self, data_config: munch.munchify, **kwargs: Dict[str, Any]):
         """Dataset loading from Cassia format.
 
         Args:

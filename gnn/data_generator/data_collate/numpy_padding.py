@@ -57,7 +57,7 @@ class NumpyPadding(BaseCollate):
             try:
                 inputs[idx] = {name: item for name, item in inputs[idx].items() if name in self.name_value_pairs.keys()}
             except Exception as er:
-                raise(er)
+                raise ValueError(f"Error in filtering items: {er}")
         return inputs
 
     def _normalize_shape(self, inputs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:

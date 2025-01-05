@@ -1,6 +1,7 @@
 import gc
 from typing import Any, Dict, List, Union
 
+import munch
 import torch
 import torch.nn as nn
 from tqdm import tqdm
@@ -11,7 +12,7 @@ from gnn.utils.input_wrapper import cast_label_to_list, handle_single_input
 
 
 class KVInference(BaseProcedure):
-    def __init__(self, model: nn.Module, config: Dict[str, Any], **kwargs: Dict[str, Any]):
+    def __init__(self, model: nn.Module, config: munch.munchify, **kwargs: Dict[str, Any]):
         """Key-value inference base procedure.
 
         Args:

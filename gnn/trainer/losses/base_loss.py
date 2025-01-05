@@ -1,5 +1,4 @@
-from typing import Any, Dict
-
+import munch
 import torch.nn as nn
 
 
@@ -9,7 +8,7 @@ class BaseLoss(nn.Module):
         super(BaseLoss, self).__init__()
 
     @classmethod
-    def _from_config(cls, config: Dict[str, Any]) -> "BaseLoss":
+    def _from_config(cls, config: munch.munchify) -> "BaseLoss":
         return cls(**config)
 
     def forward(self):

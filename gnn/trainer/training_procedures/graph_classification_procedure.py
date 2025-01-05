@@ -1,6 +1,7 @@
 import collections
 from typing import Any, Dict, Tuple
 
+import munch
 import neptune.new as neptune
 import torch
 import torch.nn as nn
@@ -12,7 +13,7 @@ class GraphClassificationProcedure(KVProcedure):
     def __init__(
         self,
         model: nn.Module,
-        config: Dict[str, Any],
+        config: munch.munchify,
         ems_exp: neptune.run.Run = None,
         **kwargs: Dict[str, Any],
     ):

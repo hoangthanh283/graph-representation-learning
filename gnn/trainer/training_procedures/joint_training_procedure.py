@@ -1,6 +1,7 @@
 from collections import defaultdict
 from typing import Any, Dict, List, Tuple
 
+import munch
 import neptune.new as neptune
 import numpy as np
 import torch
@@ -15,7 +16,7 @@ from gnn.utils.metric_tracker import Dictlist
 
 
 class JointTrainingProcedure(KVProcedure):
-    def __init__(self, model: nn.Module, config: Dict[str, Any], tasks: List,
+    def __init__(self, model: nn.Module, config: munch.munchify, tasks: List,
                  ems_exp: neptune.run.Run = None, **kwargs: Dict[str, Any]):
         """Optmizing process for KV task. """
         super(JointTrainingProcedure, self).__init__(model, config, ems_exp, **kwargs)

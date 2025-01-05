@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, Tuple
 
 import munch
 import neptune.new as neptune
@@ -10,51 +10,25 @@ from sklearn.metrics import classification_report
 from tqdm import tqdm
 
 from gnn.data_generator.base_dataloader import BaseDataLoader
+from gnn.data_generator.datasets import PlanetoidDataset
 from gnn.trainer.training_procedures.base_procedure import BaseProcedure
 from gnn.utils.metric_tracker import Dictlist
 
 
-class KVProcedure(BaseProcedure):
+class PlanetoidProcedure(BaseProcedure):
     def __init__(self, model: nn.Module, config: munch.munchify,
                  ems_exp: neptune = None, **kwargs: Dict[str, Any]):
         """Optmizing process for KV task. """
-        super(KVProcedure, self).__init__(model, config, ems_exp, **kwargs)
+        super(PlanetoidProcedure, self).__init__(model, config, ems_exp, **kwargs)
         self.global_step = 0
         self.config = config
         self.ems_exp = ems_exp
         self.activator = torch.nn.Softmax(dim=2)
-        self.train_loader, self.val_loader, self.class_names = self._init_dataloaders()
-
-    def _init_dataloaders(self) -> Tuple[BaseDataLoader, BaseDataLoader, Tuple[str]]:
-        """ Initializing all train/val/test dataset loader.
-
-        Return:
-            train_dataloader: List of training data-loader instances.
-            val_dataloader: List of validation/testing data-loader instances.
-        """
 
         # Initialize dataloader/dataset base.
         dataloader = BaseDataLoader(self.config)
-
-        # Training data-loaders.
-        train_dataset = dataloader._load_dataset(self.config.data_config.dataset.type,
-                                                 self.config.data_config.training,
-                                                 data_type="training")
-        train_dataloader = dataloader._get_dataloader(train_dataset, train_dataset.data_config)
-
-        # Validation data-loaders.
-        val_dataset = dataloader._load_dataset(self.config.data_config.dataset.type,
-                                               self.config.data_config.validation,
-                                               data_type="validation")
-        val_dataloader = dataloader._get_dataloader(val_dataset, val_dataset.data_config)
-
-        # Get list of class names for both key and value.
-        class_idx_names: List[Tuple[int, str]] = []
-        for idx, names in train_dataset.id_to_class.items():
-            class_idx_names.append((idx, "_".join(names)))
-        _, class_names = zip(*sorted(class_idx_names, key=lambda kk: kk[0]))
-        class_names = tuple(["other"] + list(class_names))  # As other class"s index is 0.
-        return train_dataloader, val_dataloader, class_names
+        self.dataset = PlanetoidDataset(self.config.data_config)
+        self.dataloader = dataloader._get_dataloader(self.dataset, self.config.data_config)
 
     def _get_metric_scores(self, preds: torch.Tensor, gts: torch.Tensor,
                            item_name: str = "item") -> Tuple[Dict[str, Any], Dict[str, Any]]:
@@ -75,64 +49,61 @@ class KVProcedure(BaseProcedure):
         np_y_true = flatten_y_true.cpu().detach().numpy()
 
         # Ignore padding values, other class in label.
-        test_elements = [self.config.data_config.dataset.args.node_label_padding_value,
-                         self.config.data_config.dataset.args.other_class_index]
+        test_elements = [self.config.data_config.node_label_padding_value, self.config.data_config.other_class_index]
         selected_mask = np.isin(np_y_true, test_elements, invert=True)
         np_y_pred = np_y_pred[selected_mask]
         np_y_true = np_y_true[selected_mask]
 
         # Map index class to class names.
-        pred_mapped_classes = [self.class_names[idx] for idx in np_y_pred.tolist()]
-        lbl_mapped_classes = [self.class_names[idx] for idx in np_y_true.tolist()]
+        pred_mapped_classes = [self.dataset.classes[idx] for idx in np_y_pred.tolist()]
+        lbl_mapped_classes = [self.dataset.classes[idx] for idx in np_y_true.tolist()]
 
         # Get classification reports.
         try:
-            score_matrix = classification_report(lbl_mapped_classes, pred_mapped_classes,
-                                                 output_dict=True, zero_division=0)
-
+            score_matrix = classification_report(lbl_mapped_classes, pred_mapped_classes, output_dict=True,
+                                                 zero_division=0)
             # Set score items with the item name.
             score_items = score_matrix["macro avg"]
         except Exception:
             score_items = {"precision": 0.0, "recall": 0.0, "f1-score": 0.0, "support": 0.0}
 
         score_items = {"{0}_{1}".format(item_name, kk): vv for (kk, vv) in score_items.items()}
-
         # Return predicted values and ground-truth values.
         input_items = {"pred": pred_mapped_classes, "lbl": lbl_mapped_classes}
         return score_items, input_items
 
-    def _step_process(self, batch_sample: torch.Tensor,
+    def _step_process(self, batch_sample: torch.Tensor, mask: torch.Tensor,
                       **kwargs: Dict[str, Any]) -> Tuple[torch.Tensor, Dict[str, Any], Dict[str, Any]]:
         """Step process for each batch sample.
         Args:
             batch_sample: Input batch samples.
+            mask: To mask out nodes in the graph that is not required to be used.
         Return:
             loss: Loss value.
             metric_scores: Metric scores (f1 score, precision, recall, ... etc).
         """
         # Set list of batch inputs.
         batch_inputs = [
-            batch_sample["textline_encoding"].float().to(self.device),
-            batch_sample["adjacency_matrix"].float().to(self.device)
+            batch_sample["nodes"].float().to(self.device).squeeze(),  # nodes x channels.
+            batch_sample["edge_index"].to(self.device).squeeze(),  # 2 x num edges.
         ]
 
-        # Set list of batch targets.
-        batch_targets = batch_sample["node_label"].to(self.device)
+        # Remove batch dim and mask out non-training samples.
+        targets = batch_sample["labels"].to(self.device).squeeze()
+        masked_targets = targets[mask].unsqueeze(0)
 
         # Run model prediction --> batch x nodes x classes.
-        batch_predicts = self.model.forward(batch_inputs)
-
-        # Calculate the loss.
-        loss = self.criterion(batch_predicts, batch_targets)
+        outputs = self.model.forward(batch_inputs)
+        masked_outputs = outputs[mask].unsqueeze(0)
+        loss = self.criterion(masked_outputs, masked_targets)
 
         # Get the predicted class indexs,
         # batch x classes x nodes --> batch x nodes x classes.
-        predicts = self.activator(batch_predicts)
+        predicts = self.activator(masked_outputs)
         predicts = predicts.argmax(dim=-1)
 
         # Get metric scores.
-        score_items, input_items = self._get_metric_scores(predicts, batch_targets,
-                                                           item_name="Node classification")
+        score_items, input_items = self._get_metric_scores(predicts, masked_targets, item_name="Node classification")
 
         # Add metric scores.
         score_items.update({"loss": loss.item()})
@@ -152,27 +123,27 @@ class KVProcedure(BaseProcedure):
         self.model.train()
         self.optimizer.zero_grad()
         with torch.set_grad_enabled(True):
-            loss, metric_scores, input_items = self._step_process(batch_sample, **kwargs)
+            loss, metric_scores, input_items = self._step_process(batch_sample, self.dataset.graph_dataset.train_mask,
+                                                                  **kwargs)
             loss.backward()
 
             # Clip the big gradient value, in the range of 0.0 to 1.
             nn.utils.clip_grad_norm_(self.model.parameters(), self.config.max_grad_norm)
             self.optimizer.step()
-
         return metric_scores, input_items
 
-    def _run_val_step(self, batch_sample: torch.Tensor,
+    def _run_val_step(self, batch_sample: torch.Tensor, mask: torch.Tensor,
                       **kwargs: Dict[str, Any]) -> Tuple[Dict[int, Any], Dict[str, Any]]:
         """Run the batch validation step and calculate metric scores.
 
         Args:
             batch_sample: Dict of input samples.
+            mask: To mask out nodes in the graph that is not required to be used.
         """
         # Run predicting.
         self.model.eval()
         with torch.set_grad_enabled(False):
-            _, metric_scores, input_items = self._step_process(batch_sample, **kwargs)
-
+            _, metric_scores, input_items = self._step_process(batch_sample, mask, **kwargs)
         return metric_scores, input_items
 
     def _optimize_per_epoch(self, epoch: int) -> Dict[int, Any]:
@@ -184,22 +155,32 @@ class KVProcedure(BaseProcedure):
         Returns:
             val_metrics: Validation metric scores.
         """
-        # Run training steps.
+        self._run_training_epoch(epoch)
+        _, val_item_dict = self._run_eval_epoch(epoch, self.dataset.graph_dataset.val_mask, "Validation")
+        self._log_classification_report(val_item_dict, epoch, "Validation")
+
+        test_metrics, test_item_dict = self._run_eval_epoch(epoch, self.dataset.graph_dataset.test_mask, "Testing")
+        self._log_classification_report(test_item_dict, epoch, "Testing")
+
+        macro_avg_test = self._get_macro_avg_test(test_metrics, test_item_dict)
+        return macro_avg_test
+
+    def _run_training_epoch(self, epoch: int) -> Dict:
         train_metrics = Dictlist()
-        training_bar = tqdm(self.train_loader, desc=f"Training - Epochs {epoch}")
+        training_bar = tqdm(self.dataloader, desc=f"Training - Epochs {epoch}")
         for train_batch in training_bar:
             tr_metric_scores, _ = self._run_train_step(train_batch)
             train_metrics._update(tr_metric_scores)
             self.tb_writer.add_scalar("Train_step_loss", tr_metric_scores["loss"], self.global_step)
             if self.ems_exp:
                 self.ems_exp["Train/step_loss"].append(tr_metric_scores["loss"])
-            training_bar.set_description("Epoch {0} - Train/Step loss: {1}".format(epoch, tr_metric_scores["loss"]))
+            training_bar.set_description(f"Epoch {epoch} - Train/Step loss: {tr_metric_scores['loss']}")
             self.model.zero_grad()
             self.global_step += 1
-            self.model.lambda_value = self.cosine_schedule_lambda(self.global_step, epoch,
-                                                                  self.config.num_epochs * len(self.train_loader),
-                                                                  base_value=1e-4, max_value=1.0,
-                                                                  warmup_steps=5 * len(self.train_loader))
+            self.model.lambda_value = self.cosine_schedule_lambda(
+                self.global_step, epoch, self.config.num_epochs * len(self.dataloader),
+                base_value=1e-4, max_value=1.0, warmup_steps=5 * len(self.dataloader)
+            )
 
         train_metrics = train_metrics._result()
         self.logger.info(f"Training epoch: {epoch} step: {self.global_step} metrics: {train_metrics}")
@@ -207,39 +188,44 @@ class KVProcedure(BaseProcedure):
             self.tb_writer.add_scalar(f"Train {metric_name}", score, epoch)
             if self.ems_exp:
                 self.ems_exp[f"Train/{metric_name}"].append(score)
+        return train_metrics
 
-        # Run validation steps.
-        val_metrics = Dictlist()
-        val_item_dict = defaultdict(list)
-        validation_bar = tqdm(self.val_loader, desc=f"Validation - Epochs {epoch}")
-        for val_batch in validation_bar:
-            val_metric_scores, val_input_items = self._run_val_step(val_batch)
-            val_metrics._update(val_metric_scores)
-            validation_bar.set_description("Epoch {0} - Val/Step loss: {1}".format(epoch, val_metric_scores["loss"]))
+    def _run_eval_epoch(self, epoch: int, mask: torch.Tensor, prefix_name: str = "Test"
+                        ) -> Tuple[Dict[str, Any], Dict[str, Any]]:
+        eval_metrics = Dictlist()
+        eval_item_dict = defaultdict(list)
+        eval_bar = tqdm(self.dataloader, desc=f"{prefix_name} - Epochs {epoch}")
+        for eval_batch in eval_bar:
+            eval_metric_scores, val_input_items = self._run_val_step(eval_batch, mask)
+            eval_metrics._update(eval_metric_scores)
+            eval_bar.set_description(f"Epoch {epoch} - {prefix_name}/Step loss: {eval_metric_scores['loss']}")
             for kn, item_values in val_input_items.items():
-                val_item_dict[kn].extend(item_values)
+                eval_item_dict[kn].extend(item_values)
 
-        val_metrics = val_metrics._result()
-        self.logger.info(f"Validation metrics: {val_metrics}")
-        for metric_name, score in val_metrics.items():
+        eval_metrics = eval_metrics._result()
+        self.logger.info(f"{prefix_name} metrics: {eval_metrics}")
+        for metric_name, score in eval_metrics.items():
             self.tb_writer.add_scalar(f"Val {metric_name}", score, epoch)
             if self.ems_exp:
-                self.ems_exp[f"Validation/{metric_name}"].append(score)
+                self.ems_exp[f"{prefix_name}/{metric_name}"].append(score)
+        return eval_metrics, eval_item_dict
 
-        # Log classification report for all classes.
-        val_report = classification_report(val_item_dict["lbl"], val_item_dict["pred"])
-        val_report_dict = classification_report(val_item_dict["lbl"], val_item_dict["pred"], output_dict=True)
-        macro_avg_val = val_report_dict["macro avg"]
-        for macro_metric_name, macro_score in macro_avg_val.items():
-            self.tb_writer.add_scalar(f"Macro Val {macro_metric_name}", macro_score, epoch)
+    def _log_classification_report(self, item_dict: Dict, epoch: int, phase: str):
+        report = classification_report(item_dict["lbl"], item_dict["pred"])
+        report_dict = classification_report(item_dict["lbl"], item_dict["pred"], output_dict=True)
+        macro_avg = report_dict["macro avg"]
+        for macro_metric_name, macro_score in macro_avg.items():
+            self.tb_writer.add_scalar(f"Macro {phase} {macro_metric_name}", macro_score, epoch)
             if self.ems_exp:
-                self.ems_exp[f"Macro Validation/{macro_metric_name}"].append(macro_score)
+                self.ems_exp[f"Macro {phase}/{macro_metric_name}"].append(macro_score)
+        self.logger.info(f"{phase} Classification report")
+        self.logger.info(f"\n{report}")
 
-        self.logger.info("Classification report")
-        self.logger.info(f"\n{val_report}")
-        # return val_metrics
-        macro_avg_val["loss"] = val_metrics["loss"]
-        return macro_avg_val
+    def _get_macro_avg_test(self, test_metrics: Dict, test_item_dict: Dict) -> Dict:
+        test_report_dict = classification_report(test_item_dict["lbl"], test_item_dict["pred"], output_dict=True)
+        macro_avg_test = test_report_dict["macro avg"]
+        macro_avg_test["loss"] = test_metrics["loss"]
+        return macro_avg_test
 
     def __call__(self) -> str:
         """Optimizing process. """
@@ -269,7 +255,4 @@ class KVProcedure(BaseProcedure):
 
         self.logger.info("Finish optimizing!")
         self.tb_writer.close()
-        # To visualize representation space.
-        # self.visualize_representation_space(self.val_loader)
-        # return self.model_dir
         return metrics["f1-score"]

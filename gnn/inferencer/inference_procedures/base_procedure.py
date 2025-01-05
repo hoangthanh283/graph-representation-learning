@@ -1,6 +1,7 @@
 import os
 from typing import Any, Dict, List, Tuple
 
+import munch
 import torch
 import torch.nn as nn
 
@@ -11,7 +12,7 @@ from gnn.utils.logger.color_logger import color_logger
 
 
 class BaseProcedure:
-    def __init__(self, model: nn.Module, config: Dict[str, Any], **kwargs: Dict[str, Any]):
+    def __init__(self, model: nn.Module, config: munch.munchify, **kwargs: Dict[str, Any]):
         """Base inference procedure.
 
         Args:
@@ -38,7 +39,7 @@ class BaseProcedure:
         self.logger.info("Successful initializing inference setups ...")
 
     @classmethod
-    def _from_config(cls, model: nn.Module, config: Dict[str, Any], **kwargs: Dict[str, Any]) -> "BaseProcedure":
+    def _from_config(cls, model: nn.Module, config: munch.munchify, **kwargs: Dict[str, Any]) -> "BaseProcedure":
         return cls(model, config, **kwargs)
 
     def _prepare_device(self, n_gpu_use: int) -> Tuple[torch.device, List[int]]:
@@ -114,7 +115,7 @@ class BaseProcedure:
             self.logger.info("Not found any pretrained model!")
         return model
 
-    def _load_post_processing(self, process_config: Dict[str, Any]) -> List[PostProcessBase]:
+    def _load_post_processing(self, process_config: munch.munchify) -> List[PostProcessBase]:
         """Load all post processors.
 
         Args:

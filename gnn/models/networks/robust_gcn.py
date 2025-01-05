@@ -61,7 +61,6 @@ class GraphConv(nn.Module):
         # Dirty way to get device
         cur_device = next(self.parameters()).device
         identity = identity.to(cur_device)
-
         adj = torch.cat([identity, adj], dim=-1)  # BxNxNx(L+1)
         adj = adj.view(batch_size * num_nodes, num_nodes, self.L + 1)  # (BN), N, (L+1)
 
