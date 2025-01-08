@@ -1,0 +1,50 @@
+version: 2.0
+neptune_prj: NEPTUNE_PROJECT
+neptune_api_token: NEPTUNE_API_TOKEN
+ems_secret_name: NEPTUNE_SECRET_NAME
+experiment_name: CORA-GNN-RP
+seed: 1111
+is_train: true
+output_dir: ./assets/outputs
+checkpoint_path: null
+data_config:
+  type: CORA
+  split: FULL
+procedure:
+  type: PlanetoidProcedure
+  args: {}
+loss:
+  type: CrossEntropyLoss
+  args: {}
+lr_scheduler:
+  type: DecayLearningRate
+  args:
+    lr: 0.001
+    factor: 0.9995
+    num_epochs: 100
+optimizer:
+  type: BuitlinOptimizer
+  args:
+    type_optimizer: Adam
+    lr: 0.001
+num_epochs: 50
+max_grad_norm: 5.0
+benchmark: false
+deterministic: true
+local_rank: 0
+num_gpus: 1
+distributed: false
+val_interval: 500
+save_interval: 500
+debug: false
+is_visualize: true
+model_dir_name: models
+logging:
+  verbose: false
+  level: info
+  default: info
+  log_interval: 100
+  use_tensorboard: true
+  summary_dir_name: summary
+  visualize_dir_name: visualize
+  log_dir_name: logs

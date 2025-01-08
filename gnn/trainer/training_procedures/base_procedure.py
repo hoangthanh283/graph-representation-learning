@@ -1,3 +1,4 @@
+import math
 import os
 from typing import Any, Dict, List, Tuple
 
@@ -183,6 +184,35 @@ class BaseProcedure:
         for group in self.optimizer.param_groups:
             group["lr"] = lr
         return lr
+
+    def cosine_schedule_lambda(self, step: int, epoch: int, total_steps: int, base_value: float, max_value: float,
+                               warmup_steps: int = 0) -> float:
+        """Cyclical lambda scheduler with warmup and cosine annealing.
+
+        Args:
+            step: Current training step
+            total_steps: Total number of training steps
+            base_value: Minimum lambda value
+            max_value: Maximum lambda value
+            warmup_steps: Number of warmup steps with linear scaling
+        """
+        # Input validation
+        step = max(0, min(step, total_steps))
+        warmup_steps = min(warmup_steps, total_steps)
+
+        # Calculate lambda
+        if step < warmup_steps:
+            # Linear warmup
+            lambda_value = base_value + (max_value - base_value) * (step / warmup_steps)
+        else:
+            # Cosine annealing
+            progress = float(step - warmup_steps) / float(max(1, total_steps - warmup_steps))
+            lambda_value = base_value + 0.5 * (max_value - base_value) * (1 + math.cos(math.pi * progress))
+
+        self.tb_writer.add_scalar("RP/Lambda", lambda_value, epoch)
+        if self.ems_exp:
+            self.ems_exp["RP/Lambda"].append(lambda_value)
+        return lambda_value
 
     def _progress(self):
         """Visualizing the optimizing progress. """
