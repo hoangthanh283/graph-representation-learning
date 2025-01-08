@@ -22,6 +22,7 @@ class PlanetoidProcedure(BaseProcedure):
         self.config = config
         self.ems_exp = ems_exp
         self.planetoid_dataset = self._init_dataloaders()
+        self.loss = nn.CrossEntropyLoss()
 
     def _init_dataloaders(self):
         """
@@ -57,11 +58,11 @@ class PlanetoidProcedure(BaseProcedure):
         Calculate evaluation report.
         """
         labels = self.planetoid_dataset.y
-        masked_predicts = predicts[:, mask]
-        masked_labels = labels[:, mask]
-        loss = self.criterion(masked_predicts, masked_labels)
+        masked_predicts = predicts[mask]
+        masked_labels = labels[mask]
+        loss = self.loss(masked_predicts, masked_labels)
         decoded_predicts = masked_predicts.argmax(dim=-1)
-        return loss, f1_score(masked_labels.cpu()[0], decoded_predicts.cpu()[0], average="weighted")
+        return loss, f1_score(masked_labels.cpu(), decoded_predicts.cpu(), average="weighted")
 
     def run_train(self, num_epoch: int) -> Dict[int, Any]:
         """
@@ -83,4 +84,4 @@ class PlanetoidProcedure(BaseProcedure):
             table = tabulate(table_data,
                              headers=[],
                              tablefmt='simple')
-            print(table)
+            self.logger.info(table)
