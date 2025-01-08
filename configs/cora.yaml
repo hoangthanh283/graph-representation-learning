@@ -9,6 +9,7 @@ output_dir: ./assets/outputs
 checkpoint_path: null
 data_config:
   type: CORA
+  split: FULL
 procedure:
   type: KVProcedure
   args: {}

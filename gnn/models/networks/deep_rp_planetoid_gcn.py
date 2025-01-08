@@ -5,7 +5,6 @@ from torch import nn
 
 from gnn.models.base_network import BaseNetwork
 from gnn.models.networks.deep_rp_robust_gcn import RanPACLayer
-from gnn.models.networks.robust_gcn import NodeSelfAtten
 
 
 def normalize_adj(adj: torch.Tensor) -> torch.Tensor:
@@ -65,17 +64,15 @@ class DeepRPPlanetoidGCN(BaseNetwork):
         self.conv2 = PlanetoidGraphConv(net_size, net_size)
         self.conv_out = PlanetoidGraphConv(net_size, net_size)
 
-        self.self_atten = NodeSelfAtten(self.net_size)
         self.rp_final = RanPACLayer(self.net_size, self.net_size, self.lambda_value)
         self.classifier = nn.Linear(self.net_size, output_dim)
 
     def forward(self, inputs: torch.Tensor, efficient_mode=True):
         x, adj = inputs
         adj_norm = normalize_adj(adj)
-        g1 = self.conv1(x, adj_norm)
-        g2 = self.conv2(g1, adj_norm)
-        g_out = self.conv_out(g2, adj_norm)
-        # att_out = self.self_atten(g_out)
-        rp_out = self.rp_final(g_out)
-        preds = self.classifier(rp_out)
+        g_out = self.conv1(x, adj_norm)
+        g_out = self.conv2(g_out, adj_norm)
+        g_out = self.conv_out(g_out, adj_norm)
+        g_out = self.rp_final(g_out)
+        preds = self.classifier(g_out)
         return preds

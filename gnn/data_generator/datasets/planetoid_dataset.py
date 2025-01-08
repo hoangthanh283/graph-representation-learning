@@ -20,6 +20,7 @@ class PlanetoidDatasetName(Enum):
 class Split(Enum):
     PUBLIC = "public"
     COMPLETE = "complete"
+    FULL = "full"
 
 
 class DatapileAdaptedPlanetoid(NamedTuple):

@@ -7,7 +7,7 @@ from sklearn.metrics import f1_score
 from torch import nn
 from tqdm import tqdm
 
-from gnn.data_generator.datasets.planetoid_dataset import PlanetoidDatasetName, get_planetoid_dataset
+from gnn.data_generator.datasets.planetoid_dataset import PlanetoidDatasetName, Split, get_planetoid_dataset
 from gnn.models.networks.deep_rp_planetoid_gcn import DeepRPPlanetoidGCN
 from gnn.trainer.training_procedures.base_procedure import BaseProcedure
 from gnn.utils.metric_tracker import Dictlist
@@ -30,7 +30,8 @@ class PlanetoidProcedure(BaseProcedure):
         """
         # TODO: We should define the config type more clearly.
         dataset_name = PlanetoidDatasetName[self.config.data_config.type]
-        dataset = get_planetoid_dataset(dataset_name)
+        split = Split[self.config.data_config.split]
+        dataset = get_planetoid_dataset(dataset_name, split)
         return dataset
 
     def _train_step(self) -> Dict[str, float]:
@@ -75,6 +76,8 @@ class PlanetoidProcedure(BaseProcedure):
             self.tb_writer.add_scalar("Train_step_loss", tr_metric_scores["loss"], self.global_step)
             if self.ems_exp:
                 self.ems_exp["Train/step_loss"].append(tr_metric_scores["loss"])
+                self.ems_exp["Test/f1"].append(tr_metric_scores["test_f1"])
+                self.ems_exp["Dev/f1"].append(tr_metric_scores["dev_f1"])
             self.global_step += 1
             self.model.lambda_value = self.cosine_schedule_lambda(self.global_step, epoch,
                                                                   self.config.num_epochs * num_epoch,

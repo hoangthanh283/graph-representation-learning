@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser(description="CL configurations")
 parser.add_argument("--config", default=None, type=str, help="Path to the configuration file.")
 args = parser.parse_args()
 
-EXP_POST_FIX = "DeepRPRobustGCN-rp-layer-at-last-cosine-scheduling"
+EXP_POST_FIX = "Planetoid-simple"
 
 dataset = get_planetoid_dataset(PlanetoidDatasetName.CORA)
 
@@ -22,6 +22,8 @@ model = DeepRPPlanetoidGCN(input_dim=cora_dataset.get_input_dim(), output_dim=co
 
 # Write experiment names.
 config = GNNLearningWarper._from_config(args.config)
+config.experiment_name = f"{config.experiment_name}-rp_size-{rp_size}-lambda-{lambda_value}-{EXP_POST_FIX}"
+
 procedure = PlanetoidProcedure(model, config)
 
-procedure.run_train(num_epoch=200)
+procedure.run_train(num_epoch=config.num_epochs)
