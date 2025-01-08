@@ -31,7 +31,7 @@ class PlanetoidProcedure(BaseProcedure):
         # TODO: We should define the config type more clearly.
         dataset_name = PlanetoidDatasetName[self.config.data_config.type]
         split = Split[self.config.data_config.split]
-        dataset = get_planetoid_dataset(dataset_name, split)
+        dataset = get_planetoid_dataset(dataset_name, split=split)
         return dataset
 
     def _train_step(self) -> Dict[str, float]:
@@ -88,3 +88,6 @@ class PlanetoidProcedure(BaseProcedure):
                              headers=[],
                              tablefmt='simple')
             self.logger.info(table)
+
+    def __call__(self, *args, **kwargs):
+        self.run_train(self.config.num_epochs)

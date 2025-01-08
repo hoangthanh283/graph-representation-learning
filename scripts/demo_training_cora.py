@@ -1,8 +1,8 @@
 import argparse
-
+from dotenv import load_dotenv
+load_dotenv()
 from gnn.cl_warper import GNNLearningWarper
 from gnn.data_generator.datasets.planetoid_dataset import PlanetoidDatasetName, get_planetoid_dataset
-from gnn.trainer.training_procedures.planetoid_procedure import PlanetoidProcedure
 from gnn.models.networks.deep_rp_planetoid_gcn import DeepRPPlanetoidGCN
 
 parser = argparse.ArgumentParser(description="CL configurations")
@@ -24,6 +24,5 @@ model = DeepRPPlanetoidGCN(input_dim=cora_dataset.get_input_dim(), output_dim=co
 config = GNNLearningWarper._from_config(args.config)
 config.experiment_name = f"{config.experiment_name}-rp_size-{rp_size}-lambda-{lambda_value}-{EXP_POST_FIX}"
 
-procedure = PlanetoidProcedure(model, config)
-
-procedure.run_train(num_epoch=config.num_epochs)
+warper = GNNLearningWarper(model, config=config)
+warper.train()

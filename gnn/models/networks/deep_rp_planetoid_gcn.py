@@ -73,6 +73,6 @@ class DeepRPPlanetoidGCN(BaseNetwork):
         g_out = self.conv1(x, adj_norm)
         g_out = self.conv2(g_out, adj_norm)
         g_out = self.conv_out(g_out, adj_norm)
-        g_out = self.rp_final(g_out)
+        # g_out = self.rp_final(g_out)
         preds = self.classifier(g_out)
         return preds
