@@ -5,7 +5,6 @@ from typing import NamedTuple
 import numpy as np
 import scipy.sparse as sp
 import torch
-import torch_geometric.transforms as T
 from tabulate import tabulate
 from torch_geometric.datasets import Planetoid
 
@@ -34,6 +33,7 @@ class DatapileAdaptedPlanetoid(NamedTuple):
     train_mask: torch.Tensor  # Training mask with size of N.
     val_mask: torch.Tensor  # Validation mask with size of N.
     test_mask: torch.Tensor  # Testing mask with size of N.
+    num_classes: int  # Number of classes.
 
     def __str__(self, indent: int = 4):
         table_data = [[key, value.shape] for key, value in self._asdict().items()]
@@ -45,8 +45,6 @@ class DatapileAdaptedPlanetoid(NamedTuple):
     def get_input_dim(self) -> int:
         return self.x.shape[-1]
 
-    def get_num_classes(self) -> int:
-        return len(torch.unique(self.y))
 
 
 def get_adj_matrix(edge_index: torch.Tensor, num_nodes: int) -> torch.FloatTensor:
@@ -66,7 +64,7 @@ def get_planetoid_dataset(dataset_name: PlanetoidDatasetName, normalize_features
     Get the planetoid dataset which is capable for loading ['Cora', 'CiteSeer', 'PubMed'] datasets. The original code is
     from "https://github.com/russellizadi/ssp/blob/master/experiments/datasets.py".
     :param dataset_name: Dataset name
-    :param normalize_features:
+    :param normalize_features: Whether to apply normalization.
     :param split: Whether to normalize the dataset.
     :return: Planetoid dataset.
     """
@@ -85,14 +83,15 @@ def get_planetoid_dataset(dataset_name: PlanetoidDatasetName, normalize_features
     else:
         dataset = Planetoid(path_to_save, dataset_name.value, split=split.value)
 
-    x = dataset[0].x if not normalize_features else T.NormalizeFeatures()
-    x = x.unsqueeze(0)
-    y = dataset[0].y.unsqueeze(0)
+    x = dataset[0].x
+    if normalize_features:
+        x = torch.nn.functional.normalize(x)
+    y = dataset[0].y
     train_mask = dataset[0].train_mask
     val_mask = dataset[0].val_mask
     test_mask = dataset[0].test_mask
     adj = get_adj_matrix(dataset[0].edge_index, dataset[0].num_nodes)
-    adj = adj.unsqueeze(0).unsqueeze(2)
+    num_classes = dataset.num_classes
 
     if torch.cuda.is_available():
         x = x.cuda()
@@ -102,5 +101,5 @@ def get_planetoid_dataset(dataset_name: PlanetoidDatasetName, normalize_features
         val_mask = val_mask.cuda()
         test_mask = test_mask.cuda()
 
-    return DatapileAdaptedPlanetoid(x=x, y=y, adj_matrix=adj,
-                                    train_mask=train_mask, val_mask=val_mask, test_mask=test_mask)
+    return DatapileAdaptedPlanetoid(x=x, y=y, adj_matrix=adj, train_mask=train_mask, val_mask=val_mask,
+                                    test_mask=test_mask, num_classes=num_classes)

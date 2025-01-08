@@ -1,5 +1,6 @@
 from typing import Any, Dict
 
+import torch
 import torch.nn as nn
 
 from gnn import models
@@ -51,6 +52,6 @@ class BaseNetwork(nn.Module):
         num_params = sum(pp.numel() for pp in self.parameters() if pp.requires_grad)
         return f"{num_params:,}"
 
-    def forward(self):
+    def forward(self, x: torch.Tensor, **kwargs):
         """Forwarding process. """
         raise NotImplementedError

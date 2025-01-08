@@ -3,18 +3,18 @@ from tabulate import tabulate
 
 import torch
 from neptune import Run as NeptuneRun
-from sklearn.metrics import f1_score, classification_report
+from sklearn.metrics import f1_score
 from torch import nn
 from tqdm import tqdm
 
 from gnn.data_generator.datasets.planetoid_dataset import PlanetoidDatasetName, get_planetoid_dataset
-from gnn.models.networks.deep_rp_robust_gcn import DeepRPRobustGCN
+from gnn.models.networks.deep_rp_planetoid_gcn import DeepRPPlanetoidGCN
 from gnn.trainer.training_procedures.base_procedure import BaseProcedure
 from gnn.utils.metric_tracker import Dictlist
 
 
 class PlanetoidProcedure(BaseProcedure):
-    def __init__(self, model: DeepRPRobustGCN, config: Any,
+    def __init__(self, model: DeepRPPlanetoidGCN, config: Any,
                  ems_exp: Optional[NeptuneRun] = None, **kwargs: Dict[str, Any]):
         """Optmizing process for KV task. """
         super(PlanetoidProcedure, self).__init__(model, config, ems_exp, **kwargs)
