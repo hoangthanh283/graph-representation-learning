@@ -229,10 +229,10 @@ class JointTrainingProcedure(KVProcedure):
                 self.ssl_train_iter = iter(self.ssl_train_loader)
                 ssl_train_batch = self.ssl_train_iter.next()
 
-            tr_metric_scores, tr_input_items = self._run_train_step(train_batch, ssl_train_batch)
+            tr_metric_scores, _ = self._run_train_step(train_batch, ssl_train_batch)
             train_metrics._update(tr_metric_scores)
             self.tb_writer.add_scalar("Train step loss", tr_metric_scores["loss"], self.global_step)
-            if self.neptune_exp: 
+            if self.neptune_exp:
                 self.neptune_exp["Train/step_loss"].log(tr_metric_scores["loss"], self.global_step)
             self.model.zero_grad()
             self.global_step += 1

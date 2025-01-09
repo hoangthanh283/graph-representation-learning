@@ -6,7 +6,6 @@ import neptune.new as neptune
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 from sklearn.metrics import classification_report
 from tqdm import tqdm
 

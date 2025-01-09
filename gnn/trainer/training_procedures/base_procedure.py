@@ -264,7 +264,6 @@ class BaseProcedure:
                     representation = self._get_layer_output(inputs, representation_layer)
                 else:
                     representation = self.model(inputs)
-                
                 representations.append(representation.cpu())
                 labels.append(targets.cpu())
 

@@ -36,7 +36,7 @@ class PlanetoidDataset(BaseDataset):
 
         # Load dataset samples.
         self.graph_dataset = self._create_dataset(self.data_config.dataset_type, self.data_config.dataset_name,
-                                                  self.data_config.data_dir)
+                                                  self.data_config.data_dir, self.data_config.split)
         self.num_samples = len(self.graph_dataset)
         self.graph_data = self._load_graph_data(self.graph_dataset)
         # Get the class names and assign an unique integer to each of them
@@ -46,11 +46,14 @@ class PlanetoidDataset(BaseDataset):
         self.data_processors = self._load_data_processors()
         self.logger.info(f"Initialize {self.data_config.dataset_name} dataset, loading {self.num_samples} samples...")
 
-    def _create_dataset(self, dataset_type: str, dataset_name: Optional[str] = None, cache_path: str = "/tmp"
-                        ) -> torch_geometric.datasets:
+    def _create_dataset(self, dataset_type: str, dataset_name: Optional[str] = None, cache_path: str = "/tmp",
+                        split: Optional[str] = None) -> torch_geometric.datasets:
         """Load dataset from the torch_geometric datasets."""
         dataset_class = getattr(torch_geometric.datasets, dataset_type)
-        dataset = dataset_class(root=cache_path, name=dataset_name, split="full") if dataset_name else dataset_class(root=cache_path)
+        if dataset_name:
+            dataset = dataset_class(root=cache_path, name=dataset_name, split=split)
+        else:
+            dataset_class(root=cache_path)
         dataset.transform = T.NormalizeFeatures()
         return dataset
 

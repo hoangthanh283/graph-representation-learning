@@ -10,6 +10,7 @@ checkpoint_path: null
 data_config:
   dataset_type: Planetoid
   dataset_name: Cora
+  split: full
   data_dir: ./assets
   batch_size: 1
   num_workers: 0

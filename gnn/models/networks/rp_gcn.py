@@ -1,12 +1,12 @@
+import math
 from typing import Optional, Union
 
-import math
 import numpy as np
 import torch
 from torch import nn
-from torch.nn import init
-from torch.nn import init, Parameter
+from torch.nn import Parameter
 from torch.nn import functional as F
+from torch.nn import init
 from torch_geometric.nn import GCNConv
 from torch_geometric.utils import dropout_edge
 
