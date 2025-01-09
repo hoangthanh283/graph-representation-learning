@@ -6,6 +6,7 @@ import neptune.new as neptune
 import numpy as np
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from sklearn.metrics import classification_report
 from tqdm import tqdm
 
@@ -16,13 +17,16 @@ from gnn.utils.metric_tracker import Dictlist
 
 
 class PlanetoidProcedure(BaseProcedure):
+    GLOBAL_TEST_F1_SCORE = 0.0
+    BEST_LAMBDA_VALUE = 0.0
+
     def __init__(self, model: nn.Module, config: munch.munchify,
-                 ems_exp: neptune = None, **kwargs: Dict[str, Any]):
+                 neptune_exp: neptune = None, **kwargs: Dict[str, Any]):
         """Optmizing process for KV task. """
-        super(PlanetoidProcedure, self).__init__(model, config, ems_exp, **kwargs)
+        super(PlanetoidProcedure, self).__init__(model, config, neptune_exp, **kwargs)
         self.global_step = 0
         self.config = config
-        self.ems_exp = ems_exp
+        self.neptune_exp = neptune_exp
         self.activator = torch.nn.Softmax(dim=2)
 
         # Initialize dataloader/dataset base.
@@ -97,6 +101,15 @@ class PlanetoidProcedure(BaseProcedure):
         masked_outputs = outputs[mask].unsqueeze(0)
         loss = self.criterion(masked_outputs, masked_targets)
 
+        # logsoftmax_outs = F.log_softmax(outputs, dim=1)
+        # label = logsoftmax_outs.max(1)[1]
+        # label[mask] = masked_targets
+        # label.requires_grad = False
+        # loss = F.nll_loss(logsoftmax_outs[mask], label[mask])
+        # # gamma = 1.0
+        # # lambda_ = (kwargs["epoch"]/self.config.num_epochs)**gamma
+        # # loss += lambda_ * F.nll_loss(logsoftmax_outs[~mask], label[~mask])
+
         # Get the predicted class indexs,
         # batch x classes x nodes --> batch x nodes x classes.
         predicts = self.activator(masked_outputs)
@@ -169,25 +182,25 @@ class PlanetoidProcedure(BaseProcedure):
         train_metrics = Dictlist()
         training_bar = tqdm(self.dataloader, desc=f"Training - Epochs {epoch}")
         for train_batch in training_bar:
-            tr_metric_scores, _ = self._run_train_step(train_batch)
+            tr_metric_scores, _ = self._run_train_step(train_batch, **{"epoch": epoch})
             train_metrics._update(tr_metric_scores)
             self.tb_writer.add_scalar("Train_step_loss", tr_metric_scores["loss"], self.global_step)
-            if self.ems_exp:
-                self.ems_exp["Train/step_loss"].append(tr_metric_scores["loss"])
+            if self.neptune_exp:
+                self.neptune_exp["Train/step_loss"].append(tr_metric_scores["loss"])
             training_bar.set_description(f"Epoch {epoch} - Train/Step loss: {tr_metric_scores['loss']}")
             self.model.zero_grad()
             self.global_step += 1
-            self.model.lambda_value = self.cosine_schedule_lambda(
-                self.global_step, epoch, self.config.num_epochs * len(self.dataloader),
-                base_value=1e-4, max_value=1.0, warmup_steps=5 * len(self.dataloader)
-            )
+            # self.model.lambda_value = self.cosine_schedule_lambda(
+            #     self.global_step, epoch, self.config.num_epochs * len(self.dataloader),
+            #     base_value=0.01, max_value=5.0, warmup_steps=5 * len(self.dataloader)
+            # )
 
         train_metrics = train_metrics._result()
         self.logger.info(f"Training epoch: {epoch} step: {self.global_step} metrics: {train_metrics}")
         for metric_name, score in train_metrics.items():
             self.tb_writer.add_scalar(f"Train {metric_name}", score, epoch)
-            if self.ems_exp:
-                self.ems_exp[f"Train/{metric_name}"].append(score)
+            if self.neptune_exp:
+                self.neptune_exp[f"Train/{metric_name}"].append(score)
         return train_metrics
 
     def _run_eval_epoch(self, epoch: int, mask: torch.Tensor, prefix_name: str = "Test"
@@ -196,7 +209,7 @@ class PlanetoidProcedure(BaseProcedure):
         eval_item_dict = defaultdict(list)
         eval_bar = tqdm(self.dataloader, desc=f"{prefix_name} - Epochs {epoch}")
         for eval_batch in eval_bar:
-            eval_metric_scores, val_input_items = self._run_val_step(eval_batch, mask)
+            eval_metric_scores, val_input_items = self._run_val_step(eval_batch, mask, **{"epoch": epoch})
             eval_metrics._update(eval_metric_scores)
             eval_bar.set_description(f"Epoch {epoch} - {prefix_name}/Step loss: {eval_metric_scores['loss']}")
             for kn, item_values in val_input_items.items():
@@ -206,8 +219,8 @@ class PlanetoidProcedure(BaseProcedure):
         self.logger.info(f"{prefix_name} metrics: {eval_metrics}")
         for metric_name, score in eval_metrics.items():
             self.tb_writer.add_scalar(f"Val {metric_name}", score, epoch)
-            if self.ems_exp:
-                self.ems_exp[f"{prefix_name}/{metric_name}"].append(score)
+            if self.neptune_exp:
+                self.neptune_exp[f"{prefix_name}/{metric_name}"].append(score)
         return eval_metrics, eval_item_dict
 
     def _log_classification_report(self, item_dict: Dict, epoch: int, phase: str):
@@ -216,8 +229,12 @@ class PlanetoidProcedure(BaseProcedure):
         macro_avg = report_dict["macro avg"]
         for macro_metric_name, macro_score in macro_avg.items():
             self.tb_writer.add_scalar(f"Macro {phase} {macro_metric_name}", macro_score, epoch)
-            if self.ems_exp:
-                self.ems_exp[f"Macro {phase}/{macro_metric_name}"].append(macro_score)
+            if self.neptune_exp:
+                self.neptune_exp[f"Macro {phase}/{macro_metric_name}"].append(macro_score)
+            if macro_metric_name == "f1-score" and macro_score > self.GLOBAL_TEST_F1_SCORE:
+                self.GLOBAL_TEST_F1_SCORE = macro_score
+                self.BEST_LAMBDA_VALUE = self.model.lambda_param
+
         self.logger.info(f"{phase} Classification report")
         self.logger.info(f"\n{report}")
 
@@ -236,8 +253,6 @@ class PlanetoidProcedure(BaseProcedure):
             torch.cuda.empty_cache()
             metrics = self._optimize_per_epoch(epoch)
             self._update_learning_rate(epoch, self.global_step)
-            # self.model.lambda_value = self.schedule_lambda(self.model.lambda_value, epoch, self.config.num_epochs)
-
             # Update model parameter distribution.
             for name, param in self.model.named_parameters():
                 self.tb_writer.add_histogram(name, param.clone().cpu().data.numpy(), epoch)
@@ -255,4 +270,7 @@ class PlanetoidProcedure(BaseProcedure):
 
         self.logger.info("Finish optimizing!")
         self.tb_writer.close()
+
+        self.logger.info(f"GLOBAL_TEST_F1_SCORE: {self.GLOBAL_TEST_F1_SCORE}")
+        self.logger.info(f"BEST_LAMBDA_VALUE: {self.BEST_LAMBDA_VALUE}")
         return metrics["f1-score"]

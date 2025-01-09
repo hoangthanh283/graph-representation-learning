@@ -14,11 +14,11 @@ class FinetuneKVProcedure(KVProcedure):
         self,
         model: nn.Module,
         config: munch.munchify,
-        ems_exp: neptune.run.Run = None,
+        neptune_exp: neptune.run.Run = None,
         **kwargs: Dict[str, Any],
     ):
         """Optmizing process for KV task."""
-        super(FinetuneKVProcedure, self).__init__(model, config, ems_exp, **kwargs)
+        super(FinetuneKVProcedure, self).__init__(model, config, neptune_exp, **kwargs)
         self.model = self._load_backbone(model)
 
     def _load_backbone(self, model: nn.Module) -> nn.Module:

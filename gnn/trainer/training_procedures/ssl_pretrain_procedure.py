@@ -16,11 +16,11 @@ class SSLPretrainProcedure(KVProcedure):
         model: nn.Module,
         config: munch.munchify,
         tasks: List,
-        ems_exp: neptune.run.Run = None,
+        neptune_exp: neptune.run.Run = None,
         **kwargs: Dict[str, Any],
     ):
         """Optmizing process for KV task."""
-        super(SSLPretrainProcedure, self).__init__(model, config, ems_exp, **kwargs)
+        super(SSLPretrainProcedure, self).__init__(model, config, neptune_exp, **kwargs)
         self.tasks = tasks
         self.criterions = {
             "node_property": losses.MSELoss(),

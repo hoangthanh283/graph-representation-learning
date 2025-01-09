@@ -14,12 +14,12 @@ class GraphClassificationProcedure(KVProcedure):
         self,
         model: nn.Module,
         config: munch.munchify,
-        ems_exp: neptune.run.Run = None,
+        neptune_exp: neptune.run.Run = None,
         **kwargs: Dict[str, Any],
     ):
         """Optmizing process for KV task."""
         super(GraphClassificationProcedure, self).__init__(
-            model, config, ems_exp, **kwargs
+            model, config, neptune_exp, **kwargs
         )
         self.model = self._load_backbone(model)
 

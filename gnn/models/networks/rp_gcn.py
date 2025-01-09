@@ -1,8 +1,11 @@
-import inspect
+from typing import Optional, Union
 
+import math
 import numpy as np
 import torch
 from torch import nn
+from torch.nn import init
+from torch.nn import init, Parameter
 from torch.nn import functional as F
 from torch_geometric.nn import GCNConv
 from torch_geometric.utils import dropout_edge
@@ -12,7 +15,7 @@ from gnn.models.networks.robust_gcn import NodeSelfAtten
 
 
 class RanPACLayer(nn.Module):
-    def __init__(self, input_dim, output_dim, lambda_value):
+    def __init__(self, input_dim, output_dim, lambda_value: Optional[float] = None):
         super(RanPACLayer, self).__init__()
         self.projection = nn.Linear(input_dim, output_dim, bias=False)
         # Freeze the random projection matrix
@@ -20,11 +23,19 @@ class RanPACLayer(nn.Module):
             param.requires_grad = False
 
         # Initialize weights with a normal distribution
-        nn.init.normal_(self.projection.weight, mean=0, std=1.0)
-        self.projection.weight *= (np.sqrt(output_dim) * lambda_value)
+        init.normal_(self.projection.weight, mean=0, std=1.0)
+        # self.projection.weight.data.uniform_(-1, 1)
+        self.projection.weight *= np.sqrt(output_dim)
+        if lambda_value:
+            self.projection.weight *= lambda_value
 
-    def forward(self, x, lambda_value=1):
-        x = self.projection(x) * lambda_value
+    def forward(self, x, lambda_param: Optional[Union[float, torch.FloatTensor]] = None,
+                lambda_bias: Optional[Union[float, torch.FloatTensor]] = None) -> torch.Tensor:
+        x = self.projection(x)
+        if lambda_param:
+            x *= lambda_param
+        if lambda_bias:
+            x += lambda_bias
         x = F.leaky_relu(x, negative_slope=0.2)
         return x
 
@@ -63,47 +74,38 @@ class EmbeddingBlock(nn.Module):
         return x
 
 
-class RPGCN(BaseNetwork):
-    """Graph Convolution Network with Random Projection Layer. """
-    def __init__(self, input_dim, output_dim, net_size=256, use_attention=True, rp_size=10000,
-                 lambda_value=0.01):
+class RPGCN(torch.nn.Module):
+    def __init__(self, input_dim: int, output_dim: int, net_size: int = 16, dropout_rate: float = 0.5,
+                 lambda_value: Optional[float] = None):
         super(RPGCN, self).__init__()
-        # Use inspect to get the current frame's arguments.
-        frame = inspect.currentframe()
-        args, _, _, values = inspect.getargvalues(frame)
-        init_params = {arg: values[arg] for arg in args if arg != "self"}
-        self.logger.info(f"Initialized with parameters: {init_params}")
+        self.conv1 = GCNConv(input_dim, net_size) 
+        self.p = dropout_rate
+        if lambda_value:
+            # self.lambda_param = Parameter(torch.FloatTensor([-0.43]))
+            # self.lambda_bias = Parameter(torch.FloatTensor([0.0]))
 
-        self.output_dim = output_dim
-        self.net_size = net_size
-        self.rp_size = rp_size
-        self.lambda_value = lambda_value
-        self.use_attention = use_attention
+            self.lambda_param = Parameter(torch.FloatTensor(1))
+            self.lambda_bias = Parameter(torch.FloatTensor(1))
+        else:
+            self.lambda_param = None
+            self.lambda_bias = None
+        self.rp_final = RanPACLayer(net_size, net_size)
+        self.conv2 = GCNConv(net_size, output_dim)
+        self._initialize_weights()
 
-        self.dropout = nn.Dropout(p=0.5)
-        self.gcn1 = GCNBlock(input_dim, self.net_size)
-        self.gcn2 = GCNBlock(self.net_size, self.net_size)
-        self.rp_final = RanPACLayer(self.net_size, self.net_size, 1)
-        if self.use_attention:
-            self.self_atten = NodeSelfAtten(self.net_size)
-        self.classifier = nn.Linear(self.net_size, output_dim)
-        # self.classifier = GCNBlock(self.net_size, output_dim)
+    def _initialize_weights(self):
+        init.xavier_uniform_(self.conv1.lin.weight)
+        init.xavier_uniform_(self.conv2.lin.weight)
+        if self.lambda_param and self.lambda_bias:
+            stdv = 1. / math.sqrt(self.lambda_param.size(0))
+            self.lambda_param.data.uniform_(-stdv, stdv)
+            self.lambda_bias.data.uniform_(-stdv, stdv)
 
     def forward(self, inputs):
-        vertices, edge_index = inputs
-        # 1st GraphConv
-        feats = self.gcn1(vertices, edge_index)
-        feats = self.dropout(feats)
-        # edge_index, _ = dropout_edge(edge_index, p=0.2)
-
-        # 2nd GraphConv
-        feats = self.gcn2(feats, edge_index)
-        # feats = self.rp_final(feats, self.lambda_value)
-        if self.use_attention:
-            # Attention layer
-            feats = self.self_atten(feats)
-
-        # Final classifier
-        feats = self.dropout(feats)
-        outputs = self.classifier(feats)
-        return outputs
+        x, edge_index = inputs
+        if self.lambda_param and self.lambda_bias:
+            x = self.rp_final(self.conv1(x, edge_index), self.lambda_param, self.lambda_bias)
+        else:
+            x = F.leaky_relu(self.conv1(x, edge_index), negative_slope=0.2)
+        x = F.leaky_relu(self.conv2(x, edge_index), negative_slope=0.2)
+        return x

@@ -31,15 +31,15 @@ loss:
 lr_scheduler:
   type: DecayLearningRate
   args:
-    lr: 0.001
+    lr: 0.01
     factor: 0.9995
     num_epochs: 100
 optimizer:
   type: BuitlinOptimizer
   args:
     type_optimizer: Adam
-    lr: 1.e-3
-num_epochs: 50
+    lr: 0.01
+num_epochs: 100
 max_grad_norm: 5.0
 benchmark: false
 deterministic: true

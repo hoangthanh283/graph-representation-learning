@@ -20,7 +20,7 @@ from gnn.utils.logger.color_logger import color_logger
 
 class BaseProcedure:
     def __init__(self, model: nn.Module, config: munch.munchify,
-                 ems_exp: neptune = None, **kwargs: Dict[str, Any]):
+                 neptune_exp: neptune = None, **kwargs: Dict[str, Any]):
         """Base training scheme for optimizing process.
 
         Args:
@@ -32,7 +32,7 @@ class BaseProcedure:
 
         # Make the save/output dir.
         self.config = config
-        self.ems_exp = ems_exp
+        self.neptune_exp = neptune_exp
         self.model_dir = self._make_output_dir()
         self.checkpointer = CheckpointHandler()
 
@@ -54,9 +54,9 @@ class BaseProcedure:
         self.logger.info("Successful initializing optimizing setups ...")
 
     @classmethod
-    def _from_config(cls, model: nn.Module, config: munch.munchify, ems_exp: neptune = None,
+    def _from_config(cls, model: nn.Module, config: munch.munchify, neptune_exp: neptune = None,
                      **kwargs: Dict[str, Any]) -> "BaseProcedure":
-        return cls(model, config, ems_exp, **kwargs)
+        return cls(model, config, neptune_exp, **kwargs)
 
     def _prepare_device(self, n_gpu_use: int) -> Tuple[torch.device, List[int]]:
         """Setup GPU device if available.
@@ -207,8 +207,8 @@ class BaseProcedure:
         rate = np.power(1.0 - epoch / float(num_epoches + 1), factor)
         new_value = init_value * rate
         self.tb_writer.add_scalar("RP/Lambda", new_value, epoch)
-        if self.ems_exp:
-            self.ems_exp["RP/Lambda"].append(new_value)
+        if self.neptune_exp:
+            self.neptune_exp["RP/Lambda"].append(new_value)
         return new_value
 
     def cosine_schedule_lambda(self, step: int, epoch: int, total_steps: int, base_value: float, max_value: float,
@@ -235,8 +235,8 @@ class BaseProcedure:
             progress = float(step - warmup_steps) / float(max(1, total_steps - warmup_steps))
             lambda_value = base_value + 0.5 * (max_value - base_value) * (1 + math.cos(math.pi * progress))
         self.tb_writer.add_scalar("RP/Lambda", lambda_value, epoch)
-        if self.ems_exp:
-            self.ems_exp["RP/Lambda"].append(lambda_value)
+        if self.neptune_exp:
+            self.neptune_exp["RP/Lambda"].append(lambda_value)
         return lambda_value
 
     def visualize_representation_space(self, dataloader: BaseDataLoader, representation_layer: str = None):

@@ -21,19 +21,21 @@ if __name__ == "__main__":
     # EXP_POST_FIX = "DeepRPGCN-baseline-32-gcn-layers"
     # EXP_POST_FIX = "DeepRPGCN-baseline-w/o-skip-connection-dropout-attn-rp-layers-1-4-7-final"
 
-    EXP_POST_FIX = "DeepRPRobustGCN-rp-layer-at-last-cosine-scheduling"
+    # EXP_POST_FIX = "GCN-Cora-Baseline"
+    EXP_POST_FIX = "GCN-Cora-RP"
+    # EXP_POST_FIX = "GCN-Cora-RP-Scheduling"
 
-    rp_size = None
-    lambda_value = 1  # 0.01  # 0.005
-    # model = DeepRPRobustGCN(input_dim=4369, output_dim=45, num_edges=6, net_size=256, rp_size=rp_size,
-    #                         lambda_value=lambda_value)
-    # model = DeepRPGCN(input_dim=4369, output_dim=45, num_edges=6, net_size=256, rp_size=rp_size,
-    #                   lambda_value=lambda_value)
-    model = RPGCN(input_dim=1433, output_dim=7, net_size=256, rp_size=rp_size, lambda_value=lambda_value, use_attention=False)
+    # rp_size = None
+    lambda_value = 1 # 4.52  # 0.01 # 0.005 (As learnable parameters)
+    # model = DeepRPRobustGCN(input_dim=4369, output_dim=45, num_edges=6, net_size=256, rp_size=rp_size, lambda_value=lambda_value)
+    # model = DeepRPGCN(input_dim=4369, output_dim=45, num_edges=6, net_size=256, rp_size=rp_size, lambda_value=lambda_value)
+    model = RPGCN(input_dim=1433, output_dim=7, net_size=16, dropout_rate=0.5, lambda_value=lambda_value)  # For Cora
+    # model = RPGCN(input_dim=500, output_dim=3, net_size=256, dropout_rate=0.5, lambda_value=lambda_value)  # For PubMed
+    # model = RPGCN(input_dim=3703, output_dim=6, net_size=256, dropout_rate=0.5, lambda_value=lambda_value)  # For CiteSeer
 
     # Write experiment names.
     config = GNNLearningWarper._from_config(args.config)
-    config.experiment_name = f"{config.experiment_name}-{config.data_config.dataset_name}-rp_size-{rp_size}-lambda-{lambda_value}-{EXP_POST_FIX}"
+    config.experiment_name = f"{config.experiment_name}-{config.data_config.dataset_name}-lambda-{lambda_value}-{EXP_POST_FIX}"
 
     # Define the optimzation warper.
     warper = GNNLearningWarper(model, config=config)

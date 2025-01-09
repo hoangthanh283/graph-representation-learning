@@ -16,12 +16,12 @@ from gnn.utils.metric_tracker import Dictlist
 
 class KVProcedure(BaseProcedure):
     def __init__(self, model: nn.Module, config: munch.munchify,
-                 ems_exp: neptune = None, **kwargs: Dict[str, Any]):
+                 neptune_exp: neptune = None, **kwargs: Dict[str, Any]):
         """Optmizing process for KV task. """
-        super(KVProcedure, self).__init__(model, config, ems_exp, **kwargs)
+        super(KVProcedure, self).__init__(model, config, neptune_exp, **kwargs)
         self.global_step = 0
         self.config = config
-        self.ems_exp = ems_exp
+        self.neptune_exp = neptune_exp
         self.activator = torch.nn.Softmax(dim=2)
         self.train_loader, self.val_loader, self.class_names = self._init_dataloaders()
 
@@ -191,8 +191,8 @@ class KVProcedure(BaseProcedure):
             tr_metric_scores, _ = self._run_train_step(train_batch)
             train_metrics._update(tr_metric_scores)
             self.tb_writer.add_scalar("Train_step_loss", tr_metric_scores["loss"], self.global_step)
-            if self.ems_exp:
-                self.ems_exp["Train/step_loss"].append(tr_metric_scores["loss"])
+            if self.neptune_exp:
+                self.neptune_exp["Train/step_loss"].append(tr_metric_scores["loss"])
             training_bar.set_description("Epoch {0} - Train/Step loss: {1}".format(epoch, tr_metric_scores["loss"]))
             self.model.zero_grad()
             self.global_step += 1
@@ -205,8 +205,8 @@ class KVProcedure(BaseProcedure):
         self.logger.info(f"Training epoch: {epoch} step: {self.global_step} metrics: {train_metrics}")
         for metric_name, score in train_metrics.items():
             self.tb_writer.add_scalar(f"Train {metric_name}", score, epoch)
-            if self.ems_exp:
-                self.ems_exp[f"Train/{metric_name}"].append(score)
+            if self.neptune_exp:
+                self.neptune_exp[f"Train/{metric_name}"].append(score)
 
         # Run validation steps.
         val_metrics = Dictlist()
@@ -223,8 +223,8 @@ class KVProcedure(BaseProcedure):
         self.logger.info(f"Validation metrics: {val_metrics}")
         for metric_name, score in val_metrics.items():
             self.tb_writer.add_scalar(f"Val {metric_name}", score, epoch)
-            if self.ems_exp:
-                self.ems_exp[f"Validation/{metric_name}"].append(score)
+            if self.neptune_exp:
+                self.neptune_exp[f"Validation/{metric_name}"].append(score)
 
         # Log classification report for all classes.
         val_report = classification_report(val_item_dict["lbl"], val_item_dict["pred"])
@@ -232,8 +232,8 @@ class KVProcedure(BaseProcedure):
         macro_avg_val = val_report_dict["macro avg"]
         for macro_metric_name, macro_score in macro_avg_val.items():
             self.tb_writer.add_scalar(f"Macro Val {macro_metric_name}", macro_score, epoch)
-            if self.ems_exp:
-                self.ems_exp[f"Macro Validation/{macro_metric_name}"].append(macro_score)
+            if self.neptune_exp:
+                self.neptune_exp[f"Macro Validation/{macro_metric_name}"].append(macro_score)
 
         self.logger.info("Classification report")
         self.logger.info(f"\n{val_report}")

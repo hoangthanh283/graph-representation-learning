@@ -50,7 +50,7 @@ class GNNLearningWarper:
             tr_procedure_type = self.config.procedure.type
             tr_procedure_args = self.config.procedure.args
             self.trainer = getattr(training_procedures, tr_procedure_type)._from_config(
-                self.model, self.config, ems_exp=NEPTUNE_RUN, **tr_procedure_args)
+                self.model, self.config, neptune_exp=NEPTUNE_RUN, **tr_procedure_args)
         else:
             # Initialize inference procedure.
             infer_procedure_type = self.config.procedure.type

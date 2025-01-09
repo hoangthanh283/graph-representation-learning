@@ -17,9 +17,9 @@ from gnn.utils.metric_tracker import Dictlist
 
 class JointTrainingProcedure(KVProcedure):
     def __init__(self, model: nn.Module, config: munch.munchify, tasks: List,
-                 ems_exp: neptune.run.Run = None, **kwargs: Dict[str, Any]):
+                 neptune_exp: neptune.run.Run = None, **kwargs: Dict[str, Any]):
         """Optmizing process for KV task. """
-        super(JointTrainingProcedure, self).__init__(model, config, ems_exp, **kwargs)
+        super(JointTrainingProcedure, self).__init__(model, config, neptune_exp, **kwargs)
         self.tasks = tasks
         self.criterions = {
             "node_property": losses.MSELoss(),
@@ -232,7 +232,8 @@ class JointTrainingProcedure(KVProcedure):
             tr_metric_scores, tr_input_items = self._run_train_step(train_batch, ssl_train_batch)
             train_metrics._update(tr_metric_scores)
             self.tb_writer.add_scalar("Train step loss", tr_metric_scores["loss"], self.global_step)
-            self.ems_exp["Train/step_loss"].log(tr_metric_scores["loss"], self.global_step)
+            if self.neptune_exp: 
+                self.neptune_exp["Train/step_loss"].log(tr_metric_scores["loss"], self.global_step)
             self.model.zero_grad()
             self.global_step += 1
 
@@ -240,7 +241,8 @@ class JointTrainingProcedure(KVProcedure):
         self.logger.info(f"Training epoch: {epoch} step: {self.global_step} metrics: {train_metrics}")
         for metric_name, score in train_metrics.items():
             self.tb_writer.add_scalar(f"Train {metric_name}", score, epoch)
-            self.ems_exp[f"Train/{metric_name}"].log(score, epoch)
+            if self.neptune_exp:
+                self.neptune_exp[f"Train/{metric_name}"].log(score, epoch)
 
         # Run validation steps.
         val_metrics = Dictlist()
@@ -255,7 +257,8 @@ class JointTrainingProcedure(KVProcedure):
         self.logger.info(f"Validation metrics: {val_metrics}")
         for metric_name, score in val_metrics.items():
             self.tb_writer.add_scalar(f"Val {metric_name}", score, epoch)
-            self.ems_exp[f"Validation/{metric_name}"].log(score, epoch)
+            if self.neptune_exp:
+                self.neptune_exp[f"Validation/{metric_name}"].log(score, epoch)
 
         # Log classification report for all classes.
         val_report = classification_report(val_item_dict["lbl"], val_item_dict["pred"])

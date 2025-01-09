@@ -50,7 +50,7 @@ class PlanetoidDataset(BaseDataset):
                         ) -> torch_geometric.datasets:
         """Load dataset from the torch_geometric datasets."""
         dataset_class = getattr(torch_geometric.datasets, dataset_type)
-        dataset = dataset_class(root=cache_path, name=dataset_name) if dataset_name else dataset_class(root=cache_path)
+        dataset = dataset_class(root=cache_path, name=dataset_name, split="full") if dataset_name else dataset_class(root=cache_path)
         dataset.transform = T.NormalizeFeatures()
         return dataset
 
