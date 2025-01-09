@@ -83,7 +83,7 @@ class SSLLabeling(BaseDataProcess):
         )  # ignore duplicate connection. by default, self edge is 0-distance
         distance = (
             distance - 1
-        )  # -1 is ignored (lower triangle), classes start from 0 to max_distance - 1. max_distance - 1 is for out of range pair.
+        )  # -1 is ignored (lower triangle), classes start from 0 to max_distance - 1. max_distance - 1 (out of range).
 
         edges = np.vstack(np.nonzero(distance > -1))
         perm = np.random.permutation(edges.shape[1])[:k]
