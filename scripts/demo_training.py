@@ -26,12 +26,13 @@ if __name__ == "__main__":
     # EXP_POST_FIX = "GCN-Cora-RP-Scheduling"
 
     # rp_size = None
-    lambda_value = 1 # 4.52  # 0.01 # 0.005 (As learnable parameters)
+    use_rp = True
+    lambda_value = None # -0.57 # 4.52  # 0.01 # 0.005 (As learnable parameters)
     # model = DeepRPRobustGCN(input_dim=4369, output_dim=45, num_edges=6, net_size=256, rp_size=rp_size, lambda_value=lambda_value)
     # model = DeepRPGCN(input_dim=4369, output_dim=45, num_edges=6, net_size=256, rp_size=rp_size, lambda_value=lambda_value)
-    model = RPGCN(input_dim=1433, output_dim=7, net_size=16, dropout_rate=0.5, lambda_value=lambda_value)  # For Cora
-    # model = RPGCN(input_dim=500, output_dim=3, net_size=256, dropout_rate=0.5, lambda_value=lambda_value)  # For PubMed
-    # model = RPGCN(input_dim=3703, output_dim=6, net_size=256, dropout_rate=0.5, lambda_value=lambda_value)  # For CiteSeer
+    model = RPGCN(input_dim=1433, output_dim=7, net_size=16, dropout_rate=0.5, use_rp=use_rp, lambda_value=lambda_value)  # For Cora
+    # model = RPGCN(input_dim=500, output_dim=3, net_size=16, dropout_rate=0.5, use_rp=use_rp, lambda_value=lambda_value)  # For PubMed
+    # model = RPGCN(input_dim=3703, output_dim=6, net_size=16, dropout_rate=0.5, use_rp=use_rp, lambda_value=lambda_value)  # For CiteSeer
 
     # Write experiment names.
     config = GNNLearningWarper._from_config(args.config)

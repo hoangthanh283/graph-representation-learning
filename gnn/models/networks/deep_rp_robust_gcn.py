@@ -56,7 +56,7 @@ class EmbeddingBlock(nn.Module):
 
     def forward(self, x):
         x = self.emb(x)
-        x = x.permute(0, 2, 1)  # Permute the input data to (N, C, L)
+        x = x.permute(0, 2, 1)  # Permute the input data to (N, C, L).
         x = self.bn(x)
         x = x.permute(0, 2, 1)  # (Optional) Permute back to original shape.
         x = F.leaky_relu(x, negative_slope=0.2)

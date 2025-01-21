@@ -117,6 +117,7 @@ class BaseProcedure:
         """Initialize learning rate shcedualer from config. """
         lr_type = self.config.lr_scheduler.type
         lr_args = self.config.lr_scheduler.args
+        lr_args.num_epochs = self.config.num_epochs
         try:
             if lr_type:
                 lr_scheduler = getattr(lr_schedulers, lr_type)._from_config(lr_args)
@@ -206,37 +207,28 @@ class BaseProcedure:
         """
         rate = np.power(1.0 - epoch / float(num_epoches + 1), factor)
         new_value = init_value * rate
-        self.tb_writer.add_scalar("RP/Lambda", new_value, epoch)
-        if self.neptune_exp:
-            self.neptune_exp["RP/Lambda"].append(new_value)
         return new_value
 
-    def cosine_schedule_lambda(self, step: int, epoch: int, total_steps: int, base_value: float, max_value: float,
+    def cosine_schedule_lambda(self, step: int, total_steps: int, min_value: float, max_value: float,
                                warmup_steps: int = 0) -> float:
         """Cyclical lambda scheduler with warmup and cosine annealing.
 
         Args:
-            step: Current training step
-            total_steps: Total number of training steps
-            base_value: Minimum lambda value
-            max_value: Maximum lambda value
-            warmup_steps: Number of warmup steps with linear scaling
+            step: Current training step.
+            total_steps: Total number of training steps.
+            min_value: Minimum lambda value.
+            max_value: Maximum lambda value.
+            warmup_steps: Number of warmup steps with linear scaling.
         """
-        # Input validation
         step = max(0, min(step, total_steps))
         warmup_steps = min(warmup_steps, total_steps)
-
-        # Calculate lambda
-        if step < warmup_steps:
-            # Linear warmup
-            lambda_value = base_value + (max_value - base_value) * (step / warmup_steps)
+        if step <= warmup_steps:
+            # Linear scaling before warmup.
+            lambda_value = min_value + (max_value - min_value) * (step / warmup_steps)
         else:
-            # Cosine annealing
+            # Cosine annealing after warmup.
             progress = float(step - warmup_steps) / float(max(1, total_steps - warmup_steps))
-            lambda_value = base_value + 0.5 * (max_value - base_value) * (1 + math.cos(math.pi * progress))
-        self.tb_writer.add_scalar("RP/Lambda", lambda_value, epoch)
-        if self.neptune_exp:
-            self.neptune_exp["RP/Lambda"].append(lambda_value)
+            lambda_value = max_value - (max_value - min_value) * (1 + math.cos(math.pi * progress)) * 0.5
         return lambda_value
 
     def visualize_representation_space(self, dataloader: BaseDataLoader, representation_layer: str = None):

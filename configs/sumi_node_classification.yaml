@@ -1,7 +1,6 @@
 version: 2.0
 neptune_prj: NEPTUNE_PROJECT
 neptune_api_token: NEPTUNE_API_TOKEN
-ems_secret_name: NEPTUNE_SECRET_NAME
 experiment_name: GNN-RP
 seed: 1111
 is_train: true
@@ -81,7 +80,6 @@ lr_scheduler:
   args:
     lr: 0.001
     factor: 0.9995
-    num_epochs: 100
 optimizer:
   type: BuitlinOptimizer
   args:

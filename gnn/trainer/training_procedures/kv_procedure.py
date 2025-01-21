@@ -195,11 +195,14 @@ class KVProcedure(BaseProcedure):
                 self.neptune_exp["Train/step_loss"].append(tr_metric_scores["loss"])
             training_bar.set_description("Epoch {0} - Train/Step loss: {1}".format(epoch, tr_metric_scores["loss"]))
             self.model.zero_grad()
-            self.global_step += 1
-            self.model.lambda_value = self.cosine_schedule_lambda(self.global_step, epoch,
+            self.model.lambda_value = self.cosine_schedule_lambda(self.global_step,
                                                                   self.config.num_epochs * len(self.train_loader),
-                                                                  base_value=1e-4, max_value=1.0,
+                                                                  min_value=-1, max_value=1,
                                                                   warmup_steps=5 * len(self.train_loader))
+            self.tb_writer.add_scalar("RP/Lambda", self.model.lambda_value, epoch)
+            if self.neptune_exp:
+                self.neptune_exp["RP/Lambda"].append(self.model.lambda_value)
+            self.global_step += 1
 
         train_metrics = train_metrics._result()
         self.logger.info(f"Training epoch: {epoch} step: {self.global_step} metrics: {train_metrics}")

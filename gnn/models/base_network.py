@@ -1,4 +1,5 @@
 import munch
+import inspect
 import torch.nn as nn
 
 from gnn import models
@@ -10,6 +11,11 @@ class BaseNetwork(nn.Module):
         """Base network class which all network inherits. """
         super(BaseNetwork, self).__init__()
         self.logger = color_logger(__name__, testing_mode=False)
+        # Use inspect to get the current frame's arguments.
+        frame = inspect.currentframe()
+        args, _, _, values = inspect.getargvalues(frame)
+        init_params = {arg: values[arg] for arg in args if arg != "self"}
+        self.logger.info(f"Initialized with parameters: {init_params}")
 
     @classmethod
     def _from_config(cls, config: munch.munchify) -> "BaseNetwork":
