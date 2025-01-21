@@ -563,7 +563,7 @@ class Graph:
             cell.lefts = real_lefts
 
     def _build_top_down_edges_1(self, cell_list_left_right):
-        """ Legacy build top down edeges of Marc """
+        """Legacy build top down edeges."""
         for cell in cell_list_left_right:
             cell_collide = [
                 other_cell
